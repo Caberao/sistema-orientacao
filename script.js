@@ -18,7 +18,7 @@ const database = firebase.database();
 // ===================================================================
 // CONFIGURAÇÕES DO FORMULÁRIO
 // ===================================================================
-const criadores = ["Ana", "Beatriz", "Carlos", "Daniela"]; // Edite ou remova nomes
+const criadores = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida"]; // Edite ou remova nomes
 const motivos = ["Indisciplina", "Gazeando aula", "Faltoso", "Celular/Fone de ouvido", "Dificuldade de aprendizado", "Chegada tardia", "Não produz/participa", "Problema com notas"];
 const acoes = ["Diálogo com o Estudante", "Comunicado aos Responsáveis"];
 const providencias = ["Solicitar comparecimento do responsável", "Advertência"];
@@ -185,3 +185,4 @@ function showStatus(message, type) {
     statusDiv.style.display = 'block';
     setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
 }
+

@@ -13,8 +13,8 @@
             <p id="report-date"></p>
             <p id="report-summary"></p>
         </header>
-        <main id="report-table-container">
-            <!-- A tabela com os resultados será inserida aqui pelo script -->
+        <main id="report-main-content">
+            <!-- O conteúdo do relatório será inserido aqui pelo script -->
         </main>
         <footer>
             <p>Relatório gerado pelo Sistema de Encaminhamentos da Orientação</p>
@@ -30,15 +30,15 @@
                 document.getElementById('report-date').textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
                 document.getElementById('report-summary').textContent = summary;
 
-                let tableHTML = '';
+                let contentHTML = '';
                 if (reportType === 'simple') {
                     document.getElementById('report-title').textContent = 'Relatório Simplificado de Encaminhamentos';
-                    tableHTML = buildSimpleTable(resultsData);
+                    contentHTML = buildSimpleTable(resultsData);
                 } else {
                     document.getElementById('report-title').textContent = 'Relatório Completo de Encaminhamentos';
-                    tableHTML = buildCompleteTable(resultsData);
+                    contentHTML = buildCompleteReport(resultsData);
                 }
-                document.getElementById('report-table-container').innerHTML = tableHTML;
+                document.getElementById('report-main-content').innerHTML = contentHTML;
 
                 localStorage.removeItem('searchResults');
                 localStorage.removeItem('searchSummary');
@@ -47,33 +47,11 @@
                 setTimeout(() => { window.print(); }, 500);
 
             } else {
-                document.getElementById('report-table-container').innerHTML = "<p>Nenhum dado encontrado para gerar o relatório.</p>";
+                document.getElementById('report-main-content').innerHTML = "<p>Nenhum dado encontrado para gerar o relatório.</p>";
             }
         });
 
         function buildSimpleTable(data) {
-            let table = `<table><thead><tr>
-                            <th>Data</th>
-                            <th>Estudante</th>
-                            <th>Turma</th>
-                            <th>Professor</th>
-                            <th>Status</th>
-                            <th>Registrado por</th>
-                        </tr></thead><tbody>`;
-            data.forEach(item => {
-                table += `<tr>
-                            <td>${item.dataEncaminhamento || ''}</td>
-                            <td>${item.estudante || ''}</td>
-                            <td>${item.turma || ''}</td>
-                            <td>${item.professor || ''}</td>
-                            <td>${item.status || ''}</td>
-                            <td>${item.registradoPor || ''}</td>
-                          </tr>`;
-            });
-            return table + '</tbody></table>';
-        }
-
-        function buildCompleteTable(data) {
             let table = `<table><thead><tr>
                             <th>Data</th>
                             <th>Estudante</th>
@@ -95,6 +73,51 @@
                           </tr>`;
             });
             return table + '</tbody></table>';
+        }
+
+        function buildCompleteReport(data) {
+            let reportHTML = '';
+            data.forEach(item => {
+                reportHTML += `
+                    <div class="record-card">
+                        <h2>Ficha de Encaminhamento</h2>
+                        <div class="record-grid">
+                            <div><strong>Estudante:</strong> ${item.estudante || ''}</div>
+                            <div><strong>Turma:</strong> ${item.turma || ''}</div>
+                            <div><strong>Data:</strong> ${item.dataEncaminhamento || ''}</div>
+                            <div><strong>Professor(a):</strong> ${item.professor || ''}</div>
+                        </div>
+                        
+                        <h3>Detalhes do Encaminhamento</h3>
+                        <p><strong>Motivo(s):</strong> ${item.motivos || 'Nenhum especificado'}</p>
+                        <p class="details"><strong>Detalhes do Motivo:</strong> ${item.detalhesMotivo || 'Nenhum'}</p>
+                        
+                        <h3>Ações da Orientação</h3>
+                        <p><strong>Ações Imediatas:</strong> ${item.acoesTomadas || 'Nenhuma especificada'}</p>
+                        <p class="details"><strong>Detalhes da Ação:</strong> ${item.detalhesAcao || 'Nenhum'}</p>
+                        
+                        <h3>Contato com Responsáveis</h3>
+                        <div class="record-grid">
+                            <div><strong>Telefone:</strong> ${item.numeroTelefone || ''}</div>
+                            <div><strong>Horário da Ligação:</strong> ${item.horarioLigacao || ''}</div>
+                            <div><strong>Status da Ligação:</strong> ${item.statusLigacao || ''}</div>
+                            <div><strong>Recado com:</strong> ${item.recadoCom || ''}</div>
+                        </div>
+
+                        <h3>Providências Adicionais</h3>
+                        <p><strong>Providências:</strong> ${item.providencias || 'Nenhuma especificada'}</p>
+                        <p><strong>Solicitação de Comparecimento:</strong> ${item.solicitacaoComparecimento || 'Nenhuma'}</p>
+
+                        <h3>Fechamento</h3>
+                        <div class="record-grid">
+                            <div><strong>Status do Caso:</strong> ${item.status || ''}</div>
+                            <div><strong>Registrado por:</strong> ${item.registradoPor || ''}</div>
+                        </div>
+                        <p><strong>Outras Informações:</strong> ${item.outrasInformacoes || 'Nenhuma'}</p>
+                    </div>
+                `;
+            });
+            return reportHTML;
         }
     </script>
 </body>

@@ -2,13 +2,13 @@
 // PASSO 1: COLE A CONFIGURAÇÃO DO FIREBASE AQUI
 // ===================================================================
 const firebaseConfig = {
-    apiKey: "COLE_SUA_API_KEY_AQUI",
-    authDomain: "COLE_SEU_AUTH_DOMAIN_AQUI",
-    databaseURL: "COLE_SUA_DATABASE_URL_AQUI",
-    projectId: "COLE_SEU_PROJECT_ID_AQUI",
-    storageBucket: "COLE_SEU_STORAGE_BUCKET_AQUI",
-    messagingSenderId: "COLE_SEU_MESSAGING_SENDER_ID_AQUI",
-    appId: "COLE_SEU_APP_ID_AQUI"
+  apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
+  authDomain: "sistema-de-orientacao.firebaseapp.com",
+  databaseURL: "https://sistema-de-orientacao-default-rtdb.firebaseio.com",
+  projectId: "sistema-de-orientacao",
+  storageBucket: "sistema-de-orientacao.firebasestorage.app",
+  messagingSenderId: "931283448046",
+  appId: "1:931283448046:web:b9e81772112943533443ff"
 };
 
 // Inicializa o Firebase
@@ -18,7 +18,7 @@ const database = firebase.database();
 // ===================================================================
 // CONFIGURAÇÕES DO FORMULÁRIO
 // ===================================================================
-const criadores = ["Ana", "Beatriz", "Carlos", "Daniela"]; // Edite ou remova nomes
+const criadores = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida"]; // Edite ou remova nomes
 const motivos = ["Indisciplina", "Gazeando aula", "Faltoso", "Celular/Fone de ouvido", "Dificuldade de aprendizado", "Chegada tardia", "Não produz/participa", "Problema com notas"];
 const acoes = ["Diálogo com o Estudante", "Comunicado aos Responsáveis"];
 const providencias = ["Solicitar comparecimento do responsável", "Advertência"];
@@ -319,3 +319,4 @@ function showStatus(message, type) {
     statusDiv.style.display = 'block';
     setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
 }
+

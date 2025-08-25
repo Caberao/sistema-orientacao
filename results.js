@@ -20,7 +20,8 @@ const database = firebase.database();
 // ===================================================================
 const resultsTable = document.getElementById("results-table");
 const loadingMessage = document.getElementById("loading-message");
-const printButton = document.getElementById("print-button");
+const simpleReportButton = document.getElementById("simple-report-button");
+const completeReportButton = document.getElementById("complete-report-button");
 const resultsSummary = document.getElementById("results-summary");
 
 let currentResults = []; // Armazena os resultados da busca atual
@@ -30,7 +31,8 @@ let currentResults = []; // Armazena os resultados da busca atual
 // ===================================================================
 document.addEventListener('DOMContentLoaded', () => {
     handleSearch();
-    printButton.addEventListener('click', generateReport);
+    simpleReportButton.addEventListener('click', () => generateReport('simple'));
+    completeReportButton.addEventListener('click', () => generateReport('complete'));
 });
 
 // ===================================================================
@@ -59,8 +61,7 @@ function handleSearch() {
         .then(snapshot => {
             const data = snapshot.val();
             if (!data) {
-                // Caso em que o nó 'encaminhamentos' está vazio ou não existe.
-                displayResults([]); // Passa um array vazio para mostrar a mensagem "não encontrado".
+                displayResults([]);
                 loadingMessage.style.display = 'none';
                 return;
             }
@@ -68,17 +69,16 @@ function handleSearch() {
             let resultsArray = Object.keys(data).map(key => ({
                 id: key,
                 ...data[key]
-            })).reverse(); // Inverte para mostrar os mais recentes primeiro.
+            })).reverse();
 
             const isSearchActive = filters.estudante || filters.professor || filters.data || filters.registradoPor;
             let finalResults;
 
             if (isSearchActive) {
                 finalResults = resultsArray.filter(item => {
-                    // Verificações mais seguras para evitar erros com dados ausentes.
-                    const estudanteItem = item.estudante ? item.estudante.toLowerCase() : '';
-                    const professorItem = item.professor ? item.professor.toLowerCase() : '';
-                    const registradoPorItem = item.registradoPor ? item.registradoPor.toLowerCase() : '';
+                    const estudanteItem = (item.estudante || '').toLowerCase();
+                    const professorItem = (item.professor || '').toLowerCase();
+                    const registradoPorItem = (item.registradoPor || '').toLowerCase();
 
                     const isEstudanteMatch = !filters.estudante || estudanteItem.includes(filters.estudante);
                     const isProfessorMatch = !filters.professor || professorItem.includes(filters.professor);
@@ -88,7 +88,6 @@ function handleSearch() {
                     return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
                 });
             } else {
-                // Se nenhuma busca estiver ativa, mostra os 10 mais recentes.
                 finalResults = resultsArray.slice(0, 10);
             }
 
@@ -97,7 +96,6 @@ function handleSearch() {
             loadingMessage.style.display = 'none';
         })
         .catch(error => {
-            // Bloco crucial para capturar e exibir erros de conexão ou permissão.
             loadingMessage.style.display = 'none';
             resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">
                                         ERRO AO ACESSAR O BANCO DE DADOS:<br>
@@ -144,19 +142,32 @@ function displayResults(results) {
 }
 
 function redirectToEdit(recordId) {
-    // Redireciona para a página principal, passando o ID do registro para edição
     window.location.href = `index.html?editId=${recordId}`;
 }
 
-function generateReport() {
+/**
+ * CORREÇÃO: Função de relatório atualizada com verificação de bloqueador de pop-up.
+ */
+function generateReport(reportType) {
     if (currentResults.length === 0) {
-        alert("Não há resultados para gerar um relatório.");
+        alert("Não há resultados para gerar um relatório. Por favor, realize uma busca primeiro.");
         return;
     }
-    // Salva os dados no localStorage para a página de impressão poder acessá-los
-    localStorage.setItem('searchResults', JSON.stringify(currentResults));
-    localStorage.setItem('searchSummary', resultsSummary.textContent);
-    
-    // Abre a página de relatório em uma nova aba
-    window.open('report.html', '_blank');
+
+    try {
+        localStorage.setItem('searchResults', JSON.stringify(currentResults));
+        localStorage.setItem('searchSummary', resultsSummary.textContent);
+        localStorage.setItem('reportType', reportType);
+        
+        // Tenta abrir a nova janela
+        const reportWindow = window.open('report.html', '_blank');
+        
+        // Verifica se a janela foi bloqueada
+        if (!reportWindow || reportWindow.closed || typeof reportWindow.closed == 'undefined') {
+            alert('Seu navegador bloqueou a abertura da nova janela.\n\nPor favor, desative o bloqueador de pop-ups para este site e tente novamente.');
+        }
+    } catch (e) {
+        alert("Ocorreu um erro ao tentar gerar o relatório: " + e.message);
+        console.error("Erro em generateReport:", e);
+    }
 }

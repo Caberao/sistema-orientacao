@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Encaminhamentos</title>
+    <link rel="stylesheet" href="print.css">
+</head>
+<body>
+    <div class="report-container">
+        <header>
+            <h1>Relatório de Encaminhamentos</h1>
+            <p id="report-date"></p>
+            <p id="report-summary"></p>
+        </header>
+        <main id="report-table-container">
+            <!-- A tabela com os resultados será inserida aqui pelo script -->
+        </main>
+        <footer>
+            <p>Relatório gerado pelo Sistema de Encaminhamentos da Orientação</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultsData = JSON.parse(localStorage.getItem('searchResults'));
+            const summary = localStorage.getItem('searchSummary');
+            
+            if (resultsData && resultsData.length > 0) {
+                document.getElementById('report-date').textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
+                document.getElementById('report-summary').textContent = `Critérios da busca: ${summary}`;
+
+                let tableHTML = `<table>
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Estudante</th>
+                                            <th>Turma</th>
+                                            <th>Professor</th>
+                                            <th>Status</th>
+                                            <th>Registrado por</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                resultsData.forEach(item => {
+                    tableHTML += `<tr>
+                                    <td>${item.dataEncaminhamento || ''}</td>
+                                    <td>${item.estudante || ''}</td>
+                                    <td>${item.turma || ''}</td>
+                                    <td>${item.professor || ''}</td>
+                                    <td>${item.status || ''}</td>
+                                    <td>${item.registradoPor || ''}</td>
+                                  </tr>`;
+                });
+                tableHTML += `</tbody></table>`;
+                document.getElementById('report-table-container').innerHTML = tableHTML;
+
+                // Limpa o localStorage para não usar dados antigos
+                localStorage.removeItem('searchResults');
+                localStorage.removeItem('searchSummary');
+                
+                // Aguarda um instante para renderizar e então abre a janela de impressão
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+
+            } else {
+                document.getElementById('report-table-container').innerHTML = "<p>Nenhum dado encontrado para gerar o relatório.</p>";
+            }
+        });
+    </script>
+</body>
+</html>

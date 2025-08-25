@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Busca</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container-consulta">
+        <h1>Resultados da Busca</h1>
+        <div class="actions-bar">
+            <a href="index.html" class="back-link">← Voltar para a busca</a>
+            <button id="print-button">Gerar Relatório para Impressão</button>
+        </div>
+        <div id="results-summary"></div>
+        <div id="results-area">
+            <p id="loading-message" style="text-align:center;">Carregando resultados...</p>
+            <div id="results-table"></div>
+        </div>
+    </div>
+
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Nosso Script para esta página -->
+    <script src="results.js"></script>
+</body>
+</html>

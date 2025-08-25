@@ -9,7 +9,7 @@
 <body>
     <div class="report-container">
         <header>
-            <h1>Relatório de Encaminhamentos</h1>
+            <h1 id="report-title">Relatório de Encaminhamentos</h1>
             <p id="report-date"></p>
             <p id="report-summary"></p>
         </header>
@@ -24,49 +24,78 @@
         document.addEventListener('DOMContentLoaded', () => {
             const resultsData = JSON.parse(localStorage.getItem('searchResults'));
             const summary = localStorage.getItem('searchSummary');
-            
+            const reportType = localStorage.getItem('reportType') || 'simple';
+
             if (resultsData && resultsData.length > 0) {
                 document.getElementById('report-date').textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
-                document.getElementById('report-summary').textContent = `Critérios da busca: ${summary}`;
+                document.getElementById('report-summary').textContent = summary;
 
-                let tableHTML = `<table>
-                                    <thead>
-                                        <tr>
-                                            <th>Data</th>
-                                            <th>Estudante</th>
-                                            <th>Turma</th>
-                                            <th>Professor</th>
-                                            <th>Status</th>
-                                            <th>Registrado por</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                resultsData.forEach(item => {
-                    tableHTML += `<tr>
-                                    <td>${item.dataEncaminhamento || ''}</td>
-                                    <td>${item.estudante || ''}</td>
-                                    <td>${item.turma || ''}</td>
-                                    <td>${item.professor || ''}</td>
-                                    <td>${item.status || ''}</td>
-                                    <td>${item.registradoPor || ''}</td>
-                                  </tr>`;
-                });
-                tableHTML += `</tbody></table>`;
+                let tableHTML = '';
+                if (reportType === 'simple') {
+                    document.getElementById('report-title').textContent = 'Relatório Simplificado de Encaminhamentos';
+                    tableHTML = buildSimpleTable(resultsData);
+                } else {
+                    document.getElementById('report-title').textContent = 'Relatório Completo de Encaminhamentos';
+                    tableHTML = buildCompleteTable(resultsData);
+                }
                 document.getElementById('report-table-container').innerHTML = tableHTML;
 
-                // Limpa o localStorage para não usar dados antigos
                 localStorage.removeItem('searchResults');
                 localStorage.removeItem('searchSummary');
+                localStorage.removeItem('reportType');
                 
-                // Aguarda um instante para renderizar e então abre a janela de impressão
-                setTimeout(() => {
-                    window.print();
-                }, 500);
+                setTimeout(() => { window.print(); }, 500);
 
             } else {
                 document.getElementById('report-table-container').innerHTML = "<p>Nenhum dado encontrado para gerar o relatório.</p>";
             }
         });
+
+        function buildSimpleTable(data) {
+            let table = `<table><thead><tr>
+                            <th>Data</th>
+                            <th>Estudante</th>
+                            <th>Turma</th>
+                            <th>Professor</th>
+                            <th>Status</th>
+                            <th>Registrado por</th>
+                        </tr></thead><tbody>`;
+            data.forEach(item => {
+                table += `<tr>
+                            <td>${item.dataEncaminhamento || ''}</td>
+                            <td>${item.estudante || ''}</td>
+                            <td>${item.turma || ''}</td>
+                            <td>${item.professor || ''}</td>
+                            <td>${item.status || ''}</td>
+                            <td>${item.registradoPor || ''}</td>
+                          </tr>`;
+            });
+            return table + '</tbody></table>';
+        }
+
+        function buildCompleteTable(data) {
+            let table = `<table><thead><tr>
+                            <th>Data</th>
+                            <th>Estudante</th>
+                            <th>Turma</th>
+                            <th>Professor</th>
+                            <th>Motivos</th>
+                            <th>Ações Tomadas</th>
+                            <th>Status</th>
+                        </tr></thead><tbody>`;
+            data.forEach(item => {
+                table += `<tr>
+                            <td>${item.dataEncaminhamento || ''}</td>
+                            <td>${item.estudante || ''}</td>
+                            <td>${item.turma || ''}</td>
+                            <td>${item.professor || ''}</td>
+                            <td>${item.motivos || ''}</td>
+                            <td>${item.acoesTomadas || ''}</td>
+                            <td>${item.status || ''}</td>
+                          </tr>`;
+            });
+            return table + '</tbody></table>';
+        }
     </script>
 </body>
 </html>

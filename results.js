@@ -49,39 +49,64 @@ function handleSearch() {
         registradoPor: (params.get('registradoPor') || '').toLowerCase()
     };
     
-    // Cria um resumo da busca para exibição
     let summaryText = Object.entries(filters)
-        .filter(([key, value]) => value) // Filtra apenas os que têm valor
+        .filter(([key, value]) => value)
         .map(([key, value]) => `${key}: "${value}"`)
         .join(', ');
-    resultsSummary.textContent = summaryText ? `Filtros aplicados: ${summaryText}` : "Mostrando os registros mais recentes.";
+    resultsSummary.textContent = summaryText ? `Filtros aplicados: ${summaryText}` : "Mostrando os 10 registros mais recentes.";
 
+    database.ref('encaminhamentos').orderByChild('dataEncaminhamento').once('value')
+        .then(snapshot => {
+            const data = snapshot.val();
+            if (!data) {
+                // Caso em que o nó 'encaminhamentos' está vazio ou não existe.
+                displayResults([]); // Passa um array vazio para mostrar a mensagem "não encontrado".
+                loadingMessage.style.display = 'none';
+                return;
+            }
 
-    database.ref('encaminhamentos').orderByChild('dataEncaminhamento').once('value', snapshot => {
-        const data = snapshot.val();
-        let resultsArray = [];
-        if (data) {
-            resultsArray = Object.keys(data).map(key => ({
+            let resultsArray = Object.keys(data).map(key => ({
                 id: key,
                 ...data[key]
-            })).reverse(); // Inverte para mostrar os mais recentes primeiro
-        }
+            })).reverse(); // Inverte para mostrar os mais recentes primeiro.
 
-        const filteredResults = resultsArray.filter(item => {
-            const isEstudanteMatch = !filters.estudante || (item.estudante && item.estudante.toLowerCase().includes(filters.estudante));
-            const isProfessorMatch = !filters.professor || (item.professor && item.professor.toLowerCase().includes(filters.professor));
-            const isDataMatch = !filters.data || item.dataEncaminhamento === filters.data;
-            const isRegistradoMatch = !filters.registradoPor || (item.registradoPor && item.registradoPor.toLowerCase().includes(filters.registradoPor));
-            return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
+            const isSearchActive = filters.estudante || filters.professor || filters.data || filters.registradoPor;
+            let finalResults;
+
+            if (isSearchActive) {
+                finalResults = resultsArray.filter(item => {
+                    // Verificações mais seguras para evitar erros com dados ausentes.
+                    const estudanteItem = item.estudante ? item.estudante.toLowerCase() : '';
+                    const professorItem = item.professor ? item.professor.toLowerCase() : '';
+                    const registradoPorItem = item.registradoPor ? item.registradoPor.toLowerCase() : '';
+
+                    const isEstudanteMatch = !filters.estudante || estudanteItem.includes(filters.estudante);
+                    const isProfessorMatch = !filters.professor || professorItem.includes(filters.professor);
+                    const isDataMatch = !filters.data || item.dataEncaminhamento === filters.data;
+                    const isRegistradoMatch = !filters.registradoPor || registradoPorItem.includes(filters.registradoPor);
+                    
+                    return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
+                });
+            } else {
+                // Se nenhuma busca estiver ativa, mostra os 10 mais recentes.
+                finalResults = resultsArray.slice(0, 10);
+            }
+
+            currentResults = finalResults;
+            displayResults(finalResults);
+            loadingMessage.style.display = 'none';
+        })
+        .catch(error => {
+            // Bloco crucial para capturar e exibir erros de conexão ou permissão.
+            loadingMessage.style.display = 'none';
+            resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">
+                                        ERRO AO ACESSAR O BANCO DE DADOS:<br>
+                                        ${error.message}<br><br>
+                                        <strong>Possíveis causas:</strong><br>
+                                        1. A configuração do Firebase (firebaseConfig) no arquivo results.js está incorreta.<br>
+                                        2. As regras de segurança do Realtime Database não permitem a leitura.
+                                      </p>`;
         });
-        
-        // Se a busca for vazia, mostra os 10 mais recentes
-        const finalResults = (filters.estudante || filters.professor || filters.data || filters.registradoPor) ? filteredResults : resultsArray.slice(0, 10);
-
-        currentResults = finalResults; // Salva os resultados para impressão
-        displayResults(finalResults);
-        loadingMessage.style.display = 'none';
-    });
 }
 
 function displayResults(results) {
@@ -135,4 +160,3 @@ function generateReport() {
     // Abre a página de relatório em uma nova aba
     window.open('report.html', '_blank');
 }
-

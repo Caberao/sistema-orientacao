@@ -2,13 +2,13 @@
 // PASSO 1: COLE A CONFIGURAÇÃO DO FIREBASE AQUI
 // ===================================================================
 const firebaseConfig = {
-    apiKey: "COLE_SUA_API_KEY_AQUI",
-    authDomain: "COLE_SEU_AUTH_DOMAIN_AQUI",
-    databaseURL: "COLE_SUA_DATABASE_URL_AQUI",
-    projectId: "COLE_SEU_PROJECT_ID_AQUI",
-    storageBucket: "COLE_SEU_STORAGE_BUCKET_AQUI",
-    messagingSenderId: "COLE_SEU_MESSAGING_SENDER_ID_AQUI",
-    appId: "COLE_SEU_APP_ID_AQUI"
+  apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
+  authDomain: "sistema-de-orientacao.firebaseapp.com",
+  databaseURL: "https://sistema-de-orientacao-default-rtdb.firebaseio.com",
+  projectId: "sistema-de-orientacao",
+  storageBucket: "sistema-de-orientacao.firebasestorage.app",
+  messagingSenderId: "931283448046",
+  appId: "1:931283448046:web:b9e81772112943533443ff"
 };
 
 // Inicializa o Firebase
@@ -135,3 +135,4 @@ function generateReport() {
     // Abre a página de relatório em uma nova aba
     window.open('report.html', '_blank');
 }
+

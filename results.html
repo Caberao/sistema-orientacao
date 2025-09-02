@@ -2,32 +2,34 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados da Busca</title>
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Resultados da Busca - Sistema de Encaminhamentos</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container-consulta">
         <h1>Resultados da Busca</h1>
-        <div class="actions-bar">
-            <a href="index.html" class="back-link no-print">← Voltar para a busca</a>
-            <div>
-                <button id="simple-report-button" class="no-print">Relatório Simples</button>
-                <button id="complete-report-button" class="no-print">Relatório Completo</button>
-            </div>
+
+        <!-- BOTÃO "NOVA BUSCA / VOLTAR" ADICIONADO -->
+        <a href="index.html" class="back-button">Nova Busca / Voltar</a>
+
+        <p id="results-summary">Carregando...</p>
+        <div class="report-buttons">
+            <button id="simple-report-button" class="report-btn">Gerar Relatório Simples</button>
+            <button id="complete-report-button" class="report-btn">Gerar Relatório Completo</button>
         </div>
-        <div id="results-summary"></div>
         <div id="results-area">
-            <p id="loading-message" style="text-align:center;">Carregando resultados...</p>
+            <p id="loading-message" style="text-align:center; display:block;">Carregando...</p>
             <div id="results-table"></div>
         </div>
-    </div>
 
-    <!-- Scripts do Firebase -->
+        <!-- CONTAINER PARA OS BOTÕES DE PAGINAÇÃO (SEM ALTERAÇÃO) -->
+        <div id="pagination-container" class="pagination-container"></div>
+
+    </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <!-- Nosso Script para esta página -->
     <script src="results.js"></script>
 </body>
 </html>
+

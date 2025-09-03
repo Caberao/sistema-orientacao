@@ -16,11 +16,10 @@
                 <div class="form-group"><label for="dataEncaminhamento">Data do Encaminhamento</label><input type="date" id="dataEncaminhamento" required></div>
                 <div class="form-group"><label for="turma">Turma</label><input type="text" id="turma" required></div>
             </div>
-            <!-- CAMPO DE PROFESSOR ATUALIZADO -->
             <div class="form-group">
                 <div class="label-with-button">
                     <label for="professor">Professor(a)</label>
-                    <button type="button" id="manage-professors-btn" class="inline-btn">Gerenciar</button>
+                    <button type="button" id="manage-professors-btn" class="inline-btn">Cadastrar/Alterar</button>
                 </div>
                 <input type="text" id="professor" list="professors-datalist" required>
                 <datalist id="professors-datalist"></datalist>
@@ -45,16 +44,15 @@
         </form>
         <div id="status-message"></div>
     </div>
+
     <div class="container-consulta">
         <h1>Consultar Encaminhamentos</h1>
-        <form id="searchForm">
-            <div class="grid-2-col"><div class="form-group"><label for="search-estudante">Buscar por Estudante</label><input type="text" id="search-estudante" placeholder="Parte do nome..."></div><div class="form-group"><label for="search-professor">Buscar por Professor(a)</label><input type="text" id="search-professor" placeholder="Parte do nome..."></div></div>
-            <div class="grid-2-col"><div class="form-group"><label for="search-data">Buscar por Data</label><input type="date" id="search-data"></div><div class="form-group"><label for="search-registrado">Buscar por Quem Registrou</label><input type="text" id="search-registrado" placeholder="Parte do nome..."></div></div>
-            <button type="submit">Buscar Encaminhamentos</button>
-        </form>
+        <div class="grid-2-col"><div class="form-group"><label for="search-estudante">Buscar por Estudante</label><input type="text" id="search-estudante" placeholder="Parte do nome..."></div><div class="form-group"><label for="search-professor">Buscar por Professor(a)</label><input type="text" id="search-professor" placeholder="Parte do nome..."></div></div>
+        <div class="grid-2-col"><div class="form-group"><label for="search-data">Buscar por Data</label><input type="date" id="search-data"></div><div class="form-group"><label for="search-registrado">Buscar por Quem Registrou</label><input type="text" id="search-registrado" placeholder="Parte do nome..."></div></div>
+        <button type="button" id="search-button">Buscar Encaminhamentos</button>
     </div>
 
-    <!-- ESTRUTURA DA JANELA FLUTUANTE (MODAL) -->
+    <!-- Estrutura da Janela Flutuante (Modal) para Professores -->
     <div id="professors-modal" class="modal">
         <div class="modal-content">
             <span id="close-modal-btn" class="close-btn">&times;</span>
@@ -68,9 +66,7 @@
             </div>
             <hr>
             <h3>Lista de Professores</h3>
-            <div id="professors-list-modal" class="modal-list">
-                <!-- A lista será preenchida pelo JavaScript -->
-            </div>
+            <div id="professors-list-modal" class="modal-list"></div>
         </div>
     </div>
 
@@ -79,4 +75,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-

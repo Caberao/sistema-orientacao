@@ -10,29 +10,31 @@
     <div class="container-consulta">
         <h1>Resultados da Busca</h1>
         
-        <!-- Botão para voltar à página principal -->
+        <!-- BOTÃO PARA VOLTAR PARA A PÁGINA PRINCIPAL -->
         <a href="index.html" class="back-button">Nova Busca / Voltar</a>
 
+        <!-- ÁREA PARA MOSTRAR UM RESUMO DOS RESULTADOS -->
         <div id="results-summary" class="results-summary"></div>
+
+        <!-- ÁREA ONDE A TABELA DE RESULTADOS SERÁ INSERIDA -->
         <div id="results-area">
             <p id="loading-message" style="text-align:center;">Carregando...</p>
             <div id="results-table"></div>
         </div>
 
-        <!-- Container para os botões de paginação -->
+        <!-- ÁREA ONDE OS BOTÕES DE PAGINAÇÃO SERÃO INSERIDOS -->
         <div id="pagination-container" class="pagination-container"></div>
 
+        <!-- BOTÕES PARA GERAR RELATÓRIOS -->
         <div class="report-buttons">
             <button id="simple-report-button">Gerar Relatório Simples</button>
             <button id="complete-report-button">Gerar Relatório Completo</button>
         </div>
     </div>
 
-    <!-- Firebase App (o núcleo) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- Realtime Database -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <!-- Nosso script para esta página -->
     <script src="results.js"></script>
 </body>
 </html>
+

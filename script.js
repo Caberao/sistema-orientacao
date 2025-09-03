@@ -18,10 +18,7 @@ const database = firebase.database();
 // ===================================================================
 // DADOS PARA CHECKBOXES DINÂMICOS
 // ===================================================================
-const motivosOptions = [
-    "Indisciplina", "Gazeando aula", "Faltoso", "Celular/Fone de ouvido",
-    "Dificuldade de aprendizado", "Chegada tardia", "Não produz/participa", "Problema com notas"
-];
+const motivosOptions = ["Indisciplina", "Gazeando aula", "Faltoso", "Celular/Fone de ouvido", "Dificuldade de aprendizado", "Chegada tardia", "Não produz/participa", "Problema com notas"];
 const acoesOptions = ["Diálogo com o Estudante", "Comunicado aos Responsáveis"];
 const providenciasOptions = ["Solicitar comparecimento do responsável", "Advertência"];
 
@@ -31,27 +28,122 @@ const providenciasOptions = ["Solicitar comparecimento do responsável", "Advert
 document.addEventListener('DOMContentLoaded', () => {
     // Referências aos elementos da página
     const encaminhamentoForm = document.getElementById('encaminhamentoForm');
-    const searchButton = document.getElementById('search-button'); // CORRIGIDO: Agora busca o botão
+    const searchButton = document.getElementById('search-button');
     const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
     const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
+
+    // Referências aos elementos do modal de professores
+    const manageProfessorsBtn = document.getElementById('manage-professors-btn');
+    const professorsModal = document.getElementById('professors-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const addProfessorBtn = document.getElementById('add-professor-btn');
 
     // Gera os checkboxes dinamicamente
     createCheckboxes('motivos-container', motivosOptions, 'motivo');
     createCheckboxes('acoes-container', acoesOptions, 'acao');
     createCheckboxes('providencias-container', providenciasOptions, 'providencia');
 
-    // Adiciona os listeners (ouvintes) para os formulários e botões
+    // Adiciona os listeners (ouvintes)
     encaminhamentoForm.addEventListener('submit', saveRecord);
-    searchButton.addEventListener('click', redirectToSearchResults); // CORRIGIDO: Agora usa o evento de 'click'
+    searchButton.addEventListener('click', redirectToSearchResults);
     salvarEdicaoButton.addEventListener('click', updateRecord);
     cancelarEdicaoButton.addEventListener('click', resetForm);
+    
+    // Listeners do modal
+    manageProfessorsBtn.addEventListener('click', openProfessorsModal);
+    closeModalBtn.addEventListener('click', closeProfessorsModal);
+    addProfessorBtn.addEventListener('click', saveNewProfessor);
+    window.addEventListener('click', (event) => { // Fecha o modal se clicar fora
+        if (event.target == professorsModal) {
+            closeProfessorsModal();
+        }
+    });
 
+    // Carrega dados iniciais
     loadCreators();
+    loadProfessors();
     checkEditMode();
 });
 
 // ===================================================================
-// FUNÇÕES DO SISTEMA
+// FUNÇÕES DE GERENCIAMENTO DE PROFESSORES
+// ===================================================================
+
+function openProfessorsModal() {
+    document.getElementById('professors-modal').style.display = 'block';
+}
+
+function closeProfessorsModal() {
+    document.getElementById('professors-modal').style.display = 'none';
+}
+
+function loadProfessors() {
+    const professorsRef = database.ref('professores');
+    professorsRef.on('value', (snapshot) => {
+        const professorsData = snapshot.val();
+        const datalist = document.getElementById('professors-datalist');
+        const modalList = document.getElementById('professors-list-modal');
+        datalist.innerHTML = '';
+        modalList.innerHTML = 'Carregando...';
+
+        if (professorsData) {
+            modalList.innerHTML = '';
+            // Ordena os professores alfabeticamente
+            const sortedProfessors = Object.entries(professorsData).sort(([, a], [, b]) => a.localeCompare(b));
+
+            for (const [key, name] of sortedProfessors) {
+                // Adiciona ao autocompletar
+                const option = document.createElement('option');
+                option.value = name;
+                datalist.appendChild(option);
+
+                // Adiciona à lista do modal
+                const li = document.createElement('li');
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = name;
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Editar';
+                editBtn.className = 'edit-professor-btn';
+                editBtn.onclick = () => editProfessor(key, name);
+                li.appendChild(nameSpan);
+                li.appendChild(editBtn);
+                modalList.appendChild(li);
+            }
+        } else {
+            modalList.innerHTML = '<li>Nenhum professor cadastrado.</li>';
+        }
+    });
+}
+
+function saveNewProfessor() {
+    const newNameInput = document.getElementById('new-professor-name');
+    const newName = newNameInput.value.trim();
+    if (newName) {
+        database.ref('professores').push(newName)
+            .then(() => {
+                newNameInput.value = ''; // Limpa o campo
+                showStatusMessage('✅ Professor adicionado!', true);
+            })
+            .catch(handleFirebaseError);
+    } else {
+        alert('Por favor, digite o nome do professor.');
+    }
+}
+
+function editProfessor(key, currentName) {
+    const newName = prompt('Digite o novo nome para o professor:', currentName);
+    if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+        database.ref(`professores/${key}`).set(newName.trim())
+            .then(() => {
+                showStatusMessage('✅ Nome do professor atualizado!', true);
+            })
+            .catch(handleFirebaseError);
+    }
+}
+
+
+// ===================================================================
+// FUNÇÕES DO SISTEMA (Formulário Principal)
 // ===================================================================
 
 function createCheckboxes(containerId, options, groupName) {
@@ -61,55 +153,31 @@ function createCheckboxes(containerId, options, groupName) {
     options.forEach(option => {
         const div = document.createElement('div');
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.name = groupName;
-        checkbox.value = option;
+        checkbox.type = 'checkbox'; checkbox.name = groupName; checkbox.value = option;
         const label = document.createElement('label');
-        label.textContent = ` ${option}`;
-        label.style.fontWeight = 'normal';
-        div.appendChild(checkbox);
-        div.appendChild(label);
+        label.textContent = ` ${option}`; label.style.fontWeight = 'normal';
+        div.appendChild(checkbox); div.appendChild(label);
         container.appendChild(div);
     });
 
     if (groupName === 'acao' || groupName === 'providencia') {
         const divOutros = document.createElement('div');
         const checkboxOutros = document.createElement('input');
-        checkboxOutros.type = 'checkbox';
-        checkboxOutros.name = groupName;
-        checkboxOutros.value = 'Outros';
-        checkboxOutros.id = `${groupName}-outros-check`;
-
+        checkboxOutros.type = 'checkbox'; checkboxOutros.name = groupName; checkboxOutros.value = 'Outros'; checkboxOutros.id = `${groupName}-outros-check`;
         const labelOutros = document.createElement('label');
-        labelOutros.htmlFor = checkboxOutros.id;
-        labelOutros.textContent = ' Outros:';
-        labelOutros.style.fontWeight = 'normal';
-
+        labelOutros.htmlFor = checkboxOutros.id; labelOutros.textContent = ' Outros:'; labelOutros.style.fontWeight = 'normal';
         const textOutros = document.createElement('input');
-        textOutros.type = 'text';
-        textOutros.id = `${groupName}-outros-text`;
-        textOutros.placeholder = 'Especifique...';
-        textOutros.style.display = 'inline';
-        textOutros.style.width = '65%';
-        textOutros.disabled = true;
-
+        textOutros.type = 'text'; textOutros.id = `${groupName}-outros-text`; textOutros.placeholder = 'Especifique...'; textOutros.style.display = 'inline'; textOutros.style.width = '65%'; textOutros.disabled = true;
         checkboxOutros.addEventListener('change', function() {
             textOutros.disabled = !this.checked;
-            if (this.checked) {
-                textOutros.focus();
-            } else {
-                textOutros.value = '';
-            }
+            if (this.checked) { textOutros.focus(); } else { textOutros.value = ''; }
         });
-        divOutros.appendChild(checkboxOutros);
-        divOutros.appendChild(labelOutros);
-        divOutros.appendChild(textOutros);
+        divOutros.appendChild(checkboxOutros); divOutros.appendChild(labelOutros); divOutros.appendChild(textOutros);
         container.appendChild(divOutros);
     }
 }
 
-function redirectToSearchResults(e) {
-    // e.preventDefault() não é estritamente necessário para um botão, mas não causa mal.
+function redirectToSearchResults() {
     const params = new URLSearchParams();
     const estudante = document.getElementById('search-estudante').value;
     const professor = document.getElementById('search-professor').value;
@@ -150,7 +218,9 @@ function updateRecord() {
     database.ref(`encaminhamentos/${recordId}`).update(updatedRecord)
         .then(() => {
             showStatusMessage('✅ Encaminhamento atualizado com sucesso!', true);
-            setTimeout(() => { window.location.href = 'results.html'; }, 1500);
+            setTimeout(() => {
+                window.location.href = 'results.html';
+            }, 1500);
         })
         .catch(handleFirebaseError)
         .finally(() => setLoadingState(false, 'Salvar Alterações', true));
@@ -237,6 +307,7 @@ function resetForm() {
     document.getElementById('encaminhamentoForm').reset();
     document.getElementById('form-title').textContent = 'Registrar Encaminhamento';
     switchToEditMode(false);
+    // Limpa o ID da URL para não recarregar no modo de edição
     window.history.pushState({}, document.title, window.location.pathname);
 }
 
@@ -250,7 +321,10 @@ function showStatusMessage(message, isSuccess) {
     statusMessage.textContent = message;
     statusMessage.className = isSuccess ? 'success' : 'error';
     statusMessage.style.display = 'block';
-    setTimeout(() => { statusMessage.style.display = 'none'; }, 4000);
+    // Aumenta o tempo da mensagem para 4 segundos
+    setTimeout(() => {
+        statusMessage.style.display = 'none';
+    }, 4000);
 }
 
 function handleFirebaseError(error) {
@@ -297,4 +371,3 @@ function setCheckboxValues(name, valuesString) {
         }
     });
 }
-

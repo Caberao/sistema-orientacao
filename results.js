@@ -39,13 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================================================================
-// FUNÇÕES DE BUSCA E RENDERIZAÇÃO
+// FUNÇÕES DE BUSCA E RENDERIZAÇÃO (VERSÃO COM DIAGNÓSTICO)
 // ===================================================================
 
 function handleSearch() {
     loadingMessage.style.display = 'block';
     resultsTable.innerHTML = '';
     paginationContainer.innerHTML = ''; // Limpa a paginação antiga
+    resultsSummary.innerHTML = ''; // Limpa o sumário para o diagnóstico
 
     const params = new URLSearchParams(window.location.search);
     const filters = {
@@ -55,10 +56,15 @@ function handleSearch() {
         registradoPor: (params.get('registradoPor') || '').toLowerCase()
     };
     
+    // Mostra os filtros que estão sendo usados para diagnóstico
+    let debugInfo = [`<strong>Diagnóstico:</strong> Filtros aplicados: ${JSON.stringify(filters)}`];
+
     database.ref('encaminhamentos').once('value')
         .then(snapshot => {
             const data = snapshot.val();
             if (!data) {
+                debugInfo.push("Firebase não retornou dados.");
+                resultsSummary.innerHTML = debugInfo.join('<br>');
                 displayNoResults();
                 return;
             }
@@ -67,6 +73,8 @@ function handleSearch() {
                 id: key,
                 ...data[key]
             }));
+            
+            debugInfo.push(`Total de registros no Firebase: ${resultsArray.length}`);
             
             resultsArray.sort((a, b) => {
                 const dateA = a.dataEncaminhamento ? new Date(a.dataEncaminhamento) : new Date(0);
@@ -78,16 +86,21 @@ function handleSearch() {
 
             if (isSearchActive) {
                 allResults = resultsArray.filter(item => {
-                    const isEstudanteMatch = !filters.estudante || (item.estudante || '').toLowerCase().includes(filters.estudante);
-                    const isProfessorMatch = !filters.professor || (item.professor || '').toLowerCase().includes(filters.professor);
-                    const isDataMatch = !filters.data || item.dataEncaminhamento === filters.data;
-                    const isRegistradoMatch = !filters.registradoPor || (item.registradoPor || '').toLowerCase().includes(filters.registradoPor);
+                    // Lógica de filtro mais segura, convertendo tudo para string
+                    const isEstudanteMatch = !filters.estudante || (item.estudante || '').toString().toLowerCase().includes(filters.estudante);
+                    const isProfessorMatch = !filters.professor || (item.professor || '').toString().toLowerCase().includes(filters.professor);
+                    const isDataMatch = !filters.data || (item.dataEncaminhamento || '').toString() === filters.data;
+                    const isRegistradoMatch = !filters.registradoPor || (item.registradoPor || '').toString().toLowerCase().includes(filters.registradoPor);
                     return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
                 });
+                debugInfo.push(`Registros encontrados após o filtro: ${allResults.length}`);
             } else {
                 allResults = resultsArray;
+                debugInfo.push("Nenhum filtro ativo, mostrando todos os registros.");
             }
-
+            
+            // Adiciona o log de diagnóstico ao sumário
+            resultsSummary.innerHTML = debugInfo.join('<br>');
             currentPage = 1; 
             renderPage(currentPage);
             loadingMessage.style.display = 'none';
@@ -115,8 +128,13 @@ function displayResults(results, startIndex) {
         displayNoResults();
         return;
     }
+    
+    // Constrói o texto do sumário e adiciona abaixo do diagnóstico
+    const summaryText = `<br>Mostrando registros ${startIndex + 1} a ${startIndex + results.length} de ${allResults.length} encontrado(s).`;
+    if (!resultsSummary.innerHTML.includes(summaryText)) {
+        resultsSummary.innerHTML += summaryText;
+    }
 
-    resultsSummary.textContent = `Mostrando registros ${startIndex + 1} a ${startIndex + results.length} de ${allResults.length} encontrado(s).`;
     let tableHTML = `<table><thead><tr><th>Data</th><th>Estudante</th><th>Professor</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
     results.forEach(item => {
         tableHTML += `<tr>
@@ -138,11 +156,9 @@ function renderPaginationControls(totalPages) {
     paginationContainer.innerHTML = '';
     if (totalPages <= 1) return;
 
-    // Botões Primeiro e Voltar
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(1)" ${currentPage === 1 ? 'disabled' : ''}>Primeiro</button>`;
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Anterior</button>`;
 
-    // Lógica para os números das páginas
     const pagesToShow = [];
     if (totalPages <= 5) {
         for(let i=1; i<=totalPages; i++) pagesToShow.push(i);
@@ -164,7 +180,6 @@ function renderPaginationControls(totalPages) {
         }
     });
 
-    // Botões Próximo e Último
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Próximo &raquo;</button>`;
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Último</button>`;
 }
@@ -198,10 +213,11 @@ function redirectToEdit(recordId) {
 function displayNoResults() {
     loadingMessage.style.display = 'none';
     resultsTable.innerHTML = "<p>Nenhum registro encontrado com estes critérios.</p>";
-    resultsSummary.textContent = "Nenhum resultado para a busca atual.";
 }
 
 function handleFirebaseError(error) {
     loadingMessage.style.display = 'none';
     resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">ERRO AO ACESSAR O BANCO DE DADOS:<br>${error.message}</p>`;
+    resultsSummary.innerHTML += `<br><strong style="color:red;">Falha na conexão com o Firebase.</strong>`;
 }
+

@@ -16,21 +16,19 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // ===================================================================
-// REFERÊNCIAS AOS ELEMENTOS DA PÁGINA
+// INICIALIZAÇÃO DA PÁGINA (A CORREÇÃO ESTÁ AQUI)
 // ===================================================================
-const encaminhamentoForm = document.getElementById('encaminhamentoForm');
-const searchForm = document.getElementById('searchForm');
-const formTitle = document.getElementById('form-title');
-const registrarButton = document.getElementById('btnRegistrar');
-const editButtonsContainer = document.getElementById('editButtons');
-const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
-const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
-const statusMessage = document.getElementById('status-message');
-
-// ===================================================================
-// INICIALIZAÇÃO DA PÁGINA
-// ===================================================================
+// Este código garante que tudo só será executado depois que a página HTML estiver 100% carregada.
 document.addEventListener('DOMContentLoaded', () => {
+    // Referências aos elementos da página
+    const encaminhamentoForm = document.getElementById('encaminhamentoForm');
+    const searchForm = document.getElementById('searchForm');
+    const formTitle = document.getElementById('form-title');
+    const registrarButton = document.getElementById('btnRegistrar');
+    const editButtonsContainer = document.getElementById('editButtons');
+    const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
+    const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
+
     // Adiciona os listeners (ouvintes) para os formulários e botões
     encaminhamentoForm.addEventListener('submit', saveRecord);
     searchForm.addEventListener('submit', redirectToSearchResults);
@@ -41,33 +39,27 @@ document.addEventListener('DOMContentLoaded', () => {
     checkEditMode(); // Verifica se a página foi aberta para editar um registro
 });
 
+
 // ===================================================================
-// FUNÇÃO DE BUSCA
+// FUNÇÕES DO SISTEMA (O RESTO DO CÓDIGO PERMANECE O MESMO)
 // ===================================================================
+
 function redirectToSearchResults(e) {
-    e.preventDefault(); // Impede o envio padrão do formulário
+    e.preventDefault();
     const params = new URLSearchParams();
-    
-    // Pega os valores dos campos de busca
     const estudante = document.getElementById('search-estudante').value;
     const professor = document.getElementById('search-professor').value;
     const data = document.getElementById('search-data').value;
     const registradoPor = document.getElementById('search-registrado').value;
 
-    // Adiciona os valores aos parâmetros da URL, apenas se não estiverem vazios
     if (estudante) params.append('estudante', estudante);
     if (professor) params.append('professor', professor);
     if (data) params.append('data', data);
     if (registradoPor) params.append('registradoPor', registradoPor);
 
-    // Redireciona para a página de resultados com os filtros na URL
     window.location.href = `results.html?${params.toString()}`;
 }
 
-
-// ===================================================================
-// FUNÇÕES DE CADASTRO E EDIÇÃO (sem alterações)
-// ===================================================================
 function saveRecord(e) {
     e.preventDefault();
     const newRecord = getFormData();
@@ -104,6 +96,7 @@ function checkEditMode() {
     const params = new URLSearchParams(window.location.search);
     const recordId = params.get('editId');
     if (recordId) {
+        const formTitle = document.getElementById('form-title');
         formTitle.textContent = "Editando Encaminhamento";
         showStatusMessage('Carregando dados...', false);
         document.getElementById('editId').value = recordId;
@@ -113,7 +106,7 @@ function checkEditMode() {
                 if (data) {
                     populateForm(data);
                     switchToEditMode(true);
-                    statusMessage.style.display = 'none';
+                    document.getElementById('status-message').style.display = 'none';
                 } else {
                     showStatusMessage('❌ Erro: Registro não encontrado.', false);
                 }
@@ -134,9 +127,6 @@ function loadCreators() {
     });
 }
 
-// ===================================================================
-// FUNÇÕES AUXILIARES (sem alterações)
-// ===================================================================
 function getFormData() {
     return {
         dataEncaminhamento: document.getElementById('dataEncaminhamento').value,
@@ -180,19 +170,19 @@ function populateForm(data) {
 }
 
 function resetForm() {
-    encaminhamentoForm.reset();
-    formTitle.textContent = 'Registrar Encaminhamento';
+    document.getElementById('encaminhamentoForm').reset();
+    document.getElementById('form-title').textContent = 'Registrar Encaminhamento';
     switchToEditMode(false);
-    // Limpa o parâmetro 'editId' da URL sem recarregar a página
     window.history.pushState({}, document.title, window.location.pathname);
 }
 
 function switchToEditMode(isEditing) {
-    registrarButton.style.display = isEditing ? 'none' : 'block';
-    editButtonsContainer.style.display = isEditing ? 'grid' : 'none';
+    document.getElementById('btnRegistrar').style.display = isEditing ? 'none' : 'block';
+    document.getElementById('editButtons').style.display = isEditing ? 'grid' : 'none';
 }
 
 function showStatusMessage(message, isSuccess) {
+    const statusMessage = document.getElementById('status-message');
     statusMessage.textContent = message;
     statusMessage.className = isSuccess ? 'success' : 'error';
     statusMessage.style.display = 'block';
@@ -205,23 +195,20 @@ function handleFirebaseError(error) {
 }
 
 function setLoadingState(isLoading, text, isEditing = false) {
-    const button = isEditing ? salvarEdicaoButton : registrarButton;
+    const button = isEditing ? document.getElementById('btnSalvarEdicao') : document.getElementById('btnRegistrar');
     button.disabled = isLoading;
     button.textContent = text;
 }
 
 function getCheckboxValues(name) {
     const selected = [];
-    document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => {
-        selected.push(checkbox.value);
-    });
+    document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => { selected.push(checkbox.value); });
     return selected.join(', ');
 }
 
 function setCheckboxValues(name, valuesString) {
     if (!valuesString) return;
     const values = valuesString.split(', ');
-    document.querySelectorAll(`input[name="${name}"]`).forEach(checkbox => {
-        checkbox.checked = values.includes(checkbox.value);
-    });
+    document.querySelectorAll(`input[name="${name}"]`).forEach(checkbox => { checkbox.checked = values.includes(checkbox.value); });
 }
+

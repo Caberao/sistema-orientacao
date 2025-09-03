@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================================================================
-// FUNÇÕES DE BUSCA E RENDERIZAÇÃO (VERSÃO CORRIGIDA)
+// FUNÇÕES DE BUSCA E RENDERIZAÇÃO
 // ===================================================================
 
 function handleSearch() {
@@ -55,7 +55,6 @@ function handleSearch() {
         registradoPor: (params.get('registradoPor') || '').toLowerCase()
     };
     
-    // MUDANÇA: Removido orderByChild. A ordenação será feita de forma mais segura no código.
     database.ref('encaminhamentos').once('value')
         .then(snapshot => {
             const data = snapshot.val();
@@ -64,16 +63,11 @@ function handleSearch() {
                 return;
             }
 
-            // Transforma o objeto de dados em uma array
             let resultsArray = Object.keys(data).map(key => ({
                 id: key,
                 ...data[key]
             }));
             
-            // LOG DE DIAGNÓSTICO: Verifique o console do navegador (F12) para ver esta mensagem
-            console.log(`Foram encontrados ${resultsArray.length} registros no total no Firebase.`);
-
-            // Ordena os resultados pela data de forma segura, do mais novo para o mais antigo
             resultsArray.sort((a, b) => {
                 const dateA = a.dataEncaminhamento ? new Date(a.dataEncaminhamento) : new Date(0);
                 const dateB = b.dataEncaminhamento ? new Date(b.dataEncaminhamento) : new Date(0);
@@ -91,10 +85,10 @@ function handleSearch() {
                     return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
                 });
             } else {
-                allResults = resultsArray; // Sem filtros, pega todos os resultados
+                allResults = resultsArray;
             }
 
-            currentPage = 1; // Sempre volta para a primeira página após uma nova busca
+            currentPage = 1; 
             renderPage(currentPage);
             loadingMessage.style.display = 'none';
         })
@@ -103,25 +97,26 @@ function handleSearch() {
 
 function renderPage(page) {
     currentPage = page;
-    if (currentPage < 1) currentPage = 1;
     const totalPages = Math.ceil(allResults.length / recordsPerPage);
+
+    if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
     const start = (currentPage - 1) * recordsPerPage;
     const end = start + recordsPerPage;
     const paginatedItems = allResults.slice(start, end);
 
-    displayResults(paginatedItems);
+    displayResults(paginatedItems, start);
     renderPaginationControls(totalPages);
 }
 
-function displayResults(results) {
+function displayResults(results, startIndex) {
     if (results.length === 0) {
         displayNoResults();
         return;
     }
 
-    resultsSummary.textContent = `Mostrando ${results.length} de ${allResults.length} registro(s) encontrado(s).`;
+    resultsSummary.textContent = `Mostrando registros ${startIndex + 1} a ${startIndex + results.length} de ${allResults.length} encontrado(s).`;
     let tableHTML = `<table><thead><tr><th>Data</th><th>Estudante</th><th>Professor</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
     results.forEach(item => {
         tableHTML += `<tr>
@@ -149,15 +144,18 @@ function renderPaginationControls(totalPages) {
 
     // Lógica para os números das páginas
     const pagesToShow = [];
-    pagesToShow.push(1);
-    if (currentPage > 3) pagesToShow.push('...');
-    for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-        if (i > 1 && i < totalPages) pagesToShow.push(i);
+    if (totalPages <= 5) {
+        for(let i=1; i<=totalPages; i++) pagesToShow.push(i);
+    } else {
+        pagesToShow.push(1);
+        if (currentPage > 3) pagesToShow.push('...');
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+            pagesToShow.push(i);
+        }
+        if (currentPage < totalPages - 2) pagesToShow.push('...');
+        pagesToShow.push(totalPages);
     }
-    if (currentPage < totalPages - 2) pagesToShow.push('...');
-    if (totalPages > 1) pagesToShow.push(totalPages);
 
-    // Remove duplicados e cria os botões
     [...new Set(pagesToShow)].forEach(page => {
         if (page === '...') {
             paginationContainer.innerHTML += `<span class="pagination-btn ellipsis">...</span>`;
@@ -173,15 +171,15 @@ function renderPaginationControls(totalPages) {
 
 
 // ===================================================================
-// FUNÇÕES AUXILIARES E DE RELATÓRIO (GARANTEM QUE O RELATÓRIO É COMPLETO)
+// FUNÇÕES AUXILIARES E DE RELATÓRIO
 // ===================================================================
 function generateReport(reportType) {
-    if (allResults.length === 0) { // Usa a lista completa de resultados
+    if (allResults.length === 0) {
         alert("Não há resultados para gerar um relatório.");
         return;
     }
     try {
-        localStorage.setItem('searchResults', JSON.stringify(allResults)); // Envia a lista completa
+        localStorage.setItem('searchResults', JSON.stringify(allResults));
         localStorage.setItem('reportType', reportType);
         
         const reportWindow = window.open('report.html', '_blank');

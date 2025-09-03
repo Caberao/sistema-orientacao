@@ -1,5 +1,5 @@
 // ===================================================================
-// PASSO 1: CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
+// CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
 // ===================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
@@ -12,11 +12,18 @@ const firebaseConfig = {
 };
 
 // Inicializa o Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+try {
+    firebase.initializeApp(firebaseConfig);
+    var database = firebase.database();
+    console.log("✅ Firebase inicializado com sucesso.");
+} catch (e) {
+    console.error("🚨 ERRO CRÍTICO AO INICIALIZAR O FIREBASE:", e);
+    alert("ERRO CRÍTICO: Não foi possível inicializar o Firebase. Verifique a configuração.");
+}
+
 
 // ===================================================================
-// REFERÊNCIAS E VARIÁVEIS DE ESTADO DA PAGINAÇÃO
+// REFERÊNCIAS E VARIÁVEIS
 // ===================================================================
 const resultsTable = document.getElementById("results-table");
 const loadingMessage = document.getElementById("loading-message");
@@ -25,28 +32,30 @@ const completeReportButton = document.getElementById("complete-report-button");
 const resultsSummary = document.getElementById("results-summary");
 const paginationContainer = document.getElementById("pagination-container");
 
-let allResults = [];      // Armazena TODOS os resultados da busca para relatórios e paginação
-let currentPage = 1;      // Página atual
-const recordsPerPage = 10; // Quantidade de registros por página
+let allResults = [];
+let currentPage = 1;
+const recordsPerPage = 10;
 
 // ===================================================================
-// FUNÇÕES DE INICIALIZAÇÃO
+// INICIALIZAÇÃO DA PÁGINA
 // ===================================================================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("-> Página carregada (DOMContentLoaded). Iniciando a busca...");
     handleSearch();
     simpleReportButton.addEventListener('click', () => generateReport('simple'));
     completeReportButton.addEventListener('click', () => generateReport('complete'));
 });
 
 // ===================================================================
-// FUNÇÕES DE BUSCA E RENDERIZAÇÃO (VERSÃO COM DIAGNÓSTICO)
+// FUNÇÕES DE BUSCA E RENDERIZAÇÃO
 // ===================================================================
 
 function handleSearch() {
+    console.log("-> Função handleSearch() foi chamada.");
     loadingMessage.style.display = 'block';
     resultsTable.innerHTML = '';
-    paginationContainer.innerHTML = ''; // Limpa a paginação antiga
-    resultsSummary.innerHTML = ''; // Limpa o sumário para o diagnóstico
+    paginationContainer.innerHTML = '';
+    resultsSummary.innerHTML = '';
 
     const params = new URLSearchParams(window.location.search);
     const filters = {
@@ -56,56 +65,49 @@ function handleSearch() {
         registradoPor: (params.get('registradoPor') || '').toLowerCase()
     };
     
-    // Mostra os filtros que estão sendo usados para diagnóstico
-    let debugInfo = [`<strong>Diagnóstico:</strong> Filtros aplicados: ${JSON.stringify(filters)}`];
+    console.log("Filtros aplicados:", filters);
+    console.log("Iniciando busca no Firebase em 'encaminhamentos'...");
 
     database.ref('encaminhamentos').once('value')
         .then(snapshot => {
+            console.log("-> Resposta do Firebase recebida.");
             const data = snapshot.val();
             if (!data) {
-                debugInfo.push("Firebase não retornou dados.");
-                resultsSummary.innerHTML = debugInfo.join('<br>');
+                console.warn("Firebase retornou 'null' ou 'undefined'. Não há dados no caminho 'encaminhamentos'.");
                 displayNoResults();
                 return;
             }
 
-            let resultsArray = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key]
-            }));
+            let resultsArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            console.log(`Total de ${resultsArray.length} registros brutos encontrados no Firebase.`);
             
-            debugInfo.push(`Total de registros no Firebase: ${resultsArray.length}`);
-            
-            resultsArray.sort((a, b) => {
-                const dateA = a.dataEncaminhamento ? new Date(a.dataEncaminhamento) : new Date(0);
-                const dateB = b.dataEncaminhamento ? new Date(b.dataEncaminhamento) : new Date(0);
-                return dateB - dateA;
-            });
+            resultsArray.sort((a, b) => new Date(b.dataEncaminhamento || 0) - new Date(a.dataEncaminhamento || 0));
 
             const isSearchActive = filters.estudante || filters.professor || filters.data || filters.registradoPor;
 
             if (isSearchActive) {
+                console.log("Filtros estão ativos. Iniciando filtragem...");
                 allResults = resultsArray.filter(item => {
-                    // Lógica de filtro mais segura, convertendo tudo para string
                     const isEstudanteMatch = !filters.estudante || (item.estudante || '').toString().toLowerCase().includes(filters.estudante);
                     const isProfessorMatch = !filters.professor || (item.professor || '').toString().toLowerCase().includes(filters.professor);
                     const isDataMatch = !filters.data || (item.dataEncaminhamento || '').toString() === filters.data;
                     const isRegistradoMatch = !filters.registradoPor || (item.registradoPor || '').toString().toLowerCase().includes(filters.registradoPor);
                     return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
                 });
-                debugInfo.push(`Registros encontrados após o filtro: ${allResults.length}`);
+                console.log(`${allResults.length} registros encontrados após aplicar os filtros.`);
             } else {
+                console.log("Nenhum filtro ativo. Mostrando todos os registros.");
                 allResults = resultsArray;
-                debugInfo.push("Nenhum filtro ativo, mostrando todos os registros.");
             }
             
-            // Adiciona o log de diagnóstico ao sumário
-            resultsSummary.innerHTML = debugInfo.join('<br>');
             currentPage = 1; 
             renderPage(currentPage);
             loadingMessage.style.display = 'none';
         })
-        .catch(handleFirebaseError);
+        .catch(error => {
+            console.error("🚨 ERRO CRÍTICO DURANTE A BUSCA NO FIREBASE:", error);
+            handleFirebaseError(error);
+        });
 }
 
 function renderPage(page) {
@@ -129,11 +131,7 @@ function displayResults(results, startIndex) {
         return;
     }
     
-    // Constrói o texto do sumário e adiciona abaixo do diagnóstico
-    const summaryText = `<br>Mostrando registros ${startIndex + 1} a ${startIndex + results.length} de ${allResults.length} encontrado(s).`;
-    if (!resultsSummary.innerHTML.includes(summaryText)) {
-        resultsSummary.innerHTML += summaryText;
-    }
+    resultsSummary.innerHTML = `Mostrando registros ${startIndex + 1} a ${startIndex + results.length} de ${allResults.length} encontrado(s).`;
 
     let tableHTML = `<table><thead><tr><th>Data</th><th>Estudante</th><th>Professor</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
     results.forEach(item => {
@@ -149,9 +147,6 @@ function displayResults(results, startIndex) {
     resultsTable.innerHTML = tableHTML;
 }
 
-// ===================================================================
-// LÓGICA PARA CRIAR OS BOTÕES DE PAGINAÇÃO
-// ===================================================================
 function renderPaginationControls(totalPages) {
     paginationContainer.innerHTML = '';
     if (totalPages <= 1) return;
@@ -160,50 +155,32 @@ function renderPaginationControls(totalPages) {
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Anterior</button>`;
 
     const pagesToShow = [];
-    if (totalPages <= 5) {
-        for(let i=1; i<=totalPages; i++) pagesToShow.push(i);
-    } else {
+    if (totalPages <= 5) { for(let i=1; i<=totalPages; i++) pagesToShow.push(i); } 
+    else {
         pagesToShow.push(1);
         if (currentPage > 3) pagesToShow.push('...');
-        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-            pagesToShow.push(i);
-        }
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) { pagesToShow.push(i); }
         if (currentPage < totalPages - 2) pagesToShow.push('...');
         pagesToShow.push(totalPages);
     }
 
     [...new Set(pagesToShow)].forEach(page => {
-        if (page === '...') {
-            paginationContainer.innerHTML += `<span class="pagination-btn ellipsis">...</span>`;
-        } else {
-            paginationContainer.innerHTML += `<button class="pagination-btn ${page === currentPage ? 'active' : ''}" onclick="renderPage(${page})">${page}</button>`;
-        }
+        if (page === '...') { paginationContainer.innerHTML += `<span class="pagination-btn ellipsis">...</span>`; } 
+        else { paginationContainer.innerHTML += `<button class="pagination-btn ${page === currentPage ? 'active' : ''}" onclick="renderPage(${page})">${page}</button>`; }
     });
 
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Próximo &raquo;</button>`;
     paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Último</button>`;
 }
 
-
-// ===================================================================
-// FUNÇÕES AUXILIARES E DE RELATÓRIO
-// ===================================================================
 function generateReport(reportType) {
-    if (allResults.length === 0) {
-        alert("Não há resultados para gerar um relatório.");
-        return;
-    }
+    if (allResults.length === 0) { alert("Não há resultados para gerar um relatório."); return; }
     try {
         localStorage.setItem('searchResults', JSON.stringify(allResults));
         localStorage.setItem('reportType', reportType);
-        
         const reportWindow = window.open('report.html', '_blank');
-        if (!reportWindow) {
-            alert('Seu navegador bloqueou a abertura da nova janela. Por favor, desative o bloqueador de pop-ups para este site.');
-        }
-    } catch (e) {
-        alert("Ocorreu um erro ao tentar gerar o relatório: " + e.message);
-    }
+        if (!reportWindow) { alert('Seu navegador bloqueou a abertura da nova janela. Por favor, desative o bloqueador de pop-ups para este site.'); }
+    } catch (e) { alert("Ocorreu um erro ao tentar gerar o relatório: " + e.message); }
 }
 
 function redirectToEdit(recordId) {
@@ -218,6 +195,5 @@ function displayNoResults() {
 function handleFirebaseError(error) {
     loadingMessage.style.display = 'none';
     resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">ERRO AO ACESSAR O BANCO DE DADOS:<br>${error.message}</p>`;
-    resultsSummary.innerHTML += `<br><strong style="color:red;">Falha na conexão com o Firebase.</strong>`;
 }
 

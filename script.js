@@ -16,182 +16,244 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // ===================================================================
-// REFERÊNCIAS E VARIÁVEIS DE ESTADO DA PAGINAÇÃO
+// REFERÊNCIAS AOS ELEMENTOS DO FORMULÁRIO
 // ===================================================================
-const resultsTable = document.getElementById("results-table");
-const loadingMessage = document.getElementById("loading-message");
-const simpleReportButton = document.getElementById("simple-report-button");
-const completeReportButton = document.getElementById("complete-report-button");
-const resultsSummary = document.getElementById("results-summary");
-const paginationContainer = document.getElementById("pagination-container");
-
-let allResults = [];      // Armazena TODOS os resultados da busca para relatórios e paginação
-let currentPage = 1;      // Página atual
-const recordsPerPage = 10; // Quantidade de registros por página
+const encaminhamentoForm = document.getElementById('encaminhamentoForm');
+const formTitle = document.getElementById('form-title');
+const registrarButton = document.getElementById('btnRegistrar');
+const editButtonsContainer = document.getElementById('editButtons');
+const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
+const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
+const statusMessage = document.getElementById('status-message');
 
 // ===================================================================
-// FUNÇÕES DE INICIALIZAÇÃO
+// INICIALIZAÇÃO DA PÁGINA
 // ===================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    handleSearch();
-    simpleReportButton.addEventListener('click', () => generateReport('simple'));
-    completeReportButton.addEventListener('click', () => generateReport('complete'));
+    // Adiciona os listeners (ouvintes de eventos) aos botões
+    encaminhamentoForm.addEventListener('submit', saveRecord);
+    salvarEdicaoButton.addEventListener('click', updateRecord);
+    cancelarEdicaoButton.addEventListener('click', resetForm);
+
+    // Carrega a lista de criadores e verifica se está em modo de edição
+    loadCreators();
+    checkEditMode();
 });
 
 // ===================================================================
-// FUNÇÕES DE BUSCA E RENDERIZAÇÃO
+// FUNÇÕES PRINCIPAIS (SALVAR, ATUALIZAR, CARREGAR)
 // ===================================================================
 
-function handleSearch() {
-    loadingMessage.style.display = 'block';
-    resultsTable.innerHTML = '';
-    paginationContainer.innerHTML = ''; // Limpa a paginação antiga
+/**
+ * Salva um novo encaminhamento no Firebase.
+ * @param {Event} e - O evento de submit do formulário.
+ */
+function saveRecord(e) {
+    e.preventDefault(); // Impede o recarregamento da página
 
-    const params = new URLSearchParams(window.location.search);
-    const filters = {
-        estudante: (params.get('estudante') || '').toLowerCase(),
-        professor: (params.get('professor') || '').toLowerCase(),
-        data: params.get('data') || '',
-        registradoPor: (params.get('registradoPor') || '').toLowerCase()
-    };
+    const newRecord = getFormData();
+    if (!newRecord.registradoPor) {
+        alert("Por favor, selecione seu nome em 'Registrado por'.");
+        return;
+    }
+
+    // Cria uma nova chave única no Firebase
+    const newRecordRef = database.ref('encaminhamentos').push();
     
-    database.ref('encaminhamentos').orderByChild('dataEncaminhamento').once('value')
-        .then(snapshot => {
-            const data = snapshot.val();
-            if (!data) {
-                displayNoResults();
-                return;
-            }
-
-            let resultsArray = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key]
-            })).reverse(); // Ordem decrescente (mais novo primeiro)
-
-            const isSearchActive = filters.estudante || filters.professor || filters.data || filters.registradoPor;
-
-            if (isSearchActive) {
-                allResults = resultsArray.filter(item => {
-                    const isEstudanteMatch = !filters.estudante || (item.estudante || '').toLowerCase().includes(filters.estudante);
-                    const isProfessorMatch = !filters.professor || (item.professor || '').toLowerCase().includes(filters.professor);
-                    const isDataMatch = !filters.data || item.dataEncaminhamento === filters.data;
-                    const isRegistradoMatch = !filters.registradoPor || (item.registradoPor || '').toLowerCase().includes(filters.registradoPor);
-                    return isEstudanteMatch && isProfessorMatch && isDataMatch && isRegistradoMatch;
-                });
-            } else {
-                allResults = resultsArray; // Sem filtros, pega todos os resultados
-            }
-
-            currentPage = 1; // Sempre volta para a primeira página após uma nova busca
-            renderPage(currentPage);
-            loadingMessage.style.display = 'none';
+    setLoadingState(true, 'Salvando...');
+    newRecordRef.set(newRecord)
+        .then(() => {
+            showStatusMessage('✅ Encaminhamento registrado com sucesso!', true);
+            resetForm();
         })
-        .catch(handleFirebaseError);
+        .catch(handleFirebaseError)
+        .finally(() => setLoadingState(false, 'Registrar Encaminhamento'));
 }
 
-function renderPage(page) {
-    currentPage = page;
-    if (currentPage < 1) currentPage = 1;
-    const totalPages = Math.ceil(allResults.length / recordsPerPage);
-    if (currentPage > totalPages) currentPage = totalPages;
+/**
+ * Atualiza um encaminhamento existente no Firebase.
+ */
+function updateRecord() {
+    const params = new URLSearchParams(window.location.search);
+    const recordId = params.get('editId');
+    if (!recordId) return;
 
-    const start = (currentPage - 1) * recordsPerPage;
-    const end = start + recordsPerPage;
-    const paginatedItems = allResults.slice(start, end);
-
-    displayResults(paginatedItems);
-    renderPaginationControls(totalPages);
+    const updatedRecord = getFormData();
+    
+    setLoadingState(true, 'Atualizando...', true);
+    database.ref(`encaminhamentos/${recordId}`).update(updatedRecord)
+        .then(() => {
+            showStatusMessage('✅ Encaminhamento atualizado com sucesso!', true);
+            // Redireciona para a página de busca para ver o resultado atualizado
+            setTimeout(() => { window.location.href = 'results.html'; }, 1500);
+        })
+        .catch(handleFirebaseError)
+        .finally(() => setLoadingState(false, 'Salvar Alterações', true));
 }
 
-function displayResults(results) {
-    if (results.length === 0) {
-        displayNoResults();
-        return;
+/**
+ * Verifica se a página foi carregada com um ID para edição.
+ */
+function checkEditMode() {
+    const params = new URLSearchParams(window.location.search);
+    const recordId = params.get('editId');
+
+    if (recordId) {
+        formTitle.textContent = "Editando Encaminhamento";
+        showStatusMessage('Carregando dados para edição...', false);
+
+        database.ref(`encaminhamentos/${recordId}`).once('value')
+            .then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    populateForm(data);
+                    switchToEditMode(true);
+                    statusMessage.style.display = 'none';
+                } else {
+                    showStatusMessage('❌ Erro: Registro não encontrado.', false);
+                }
+            })
+            .catch(handleFirebaseError);
     }
+}
 
-    let tableHTML = `<table><thead><tr><th>Data</th><th>Estudante</th><th>Professor</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
-    results.forEach(item => {
-        tableHTML += `<tr>
-                        <td>${item.dataEncaminhamento || ''}</td>
-                        <td>${item.estudante || ''}</td>
-                        <td>${item.professor || ''}</td>
-                        <td>${item.status || ''}</td>
-                        <td><button class="edit-btn" onclick="redirectToEdit('${item.id}')">Ver/Editar</button></td>
-                      </tr>`;
+/**
+ * Carrega a lista de criadores.
+ */
+function loadCreators() {
+    const creators = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida"];
+    const select = document.getElementById('registradoPor');
+    select.innerHTML = '<option value="">Selecione seu nome</option>';
+    creators.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
     });
-    tableHTML += '</tbody></table>';
-    resultsTable.innerHTML = tableHTML;
 }
 
 // ===================================================================
-// LÓGICA PARA CRIAR OS BOTÕES DE PAGINAÇÃO
+// FUNÇÕES AUXILIARES (MANIPULAÇÃO DE FORMULÁRIO E ESTADO)
 // ===================================================================
-function renderPaginationControls(totalPages) {
-    paginationContainer.innerHTML = '';
-    if (totalPages <= 1) return;
 
-    // Botões Primeiro e Voltar
-    paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(1)" ${currentPage === 1 ? 'disabled' : ''}>Primeiro</button>`;
-    paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Anterior</button>`;
-
-    // Lógica para os números das páginas
-    const pagesToShow = [];
-    pagesToShow.push(1);
-    if (currentPage > 3) pagesToShow.push('...');
-    for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-        if (i > 1 && i < totalPages) pagesToShow.push(i);
-    }
-    if (currentPage < totalPages - 2) pagesToShow.push('...');
-    if (totalPages > 1) pagesToShow.push(totalPages);
-
-    // Remove duplicados e cria os botões
-    [...new Set(pagesToShow)].forEach(page => {
-        if (page === '...') {
-            paginationContainer.innerHTML += `<span class="pagination-btn ellipsis">...</span>`;
-        } else {
-            paginationContainer.innerHTML += `<button class="pagination-btn ${page === currentPage ? 'active' : ''}" onclick="renderPage(${page})">${page}</button>`;
-        }
-    });
-
-    // Botões Próximo e Último
-    paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Próximo &raquo;</button>`;
-    paginationContainer.innerHTML += `<button class="pagination-btn" onclick="renderPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Último</button>`;
+/**
+ * Coleta todos os dados do formulário e retorna um objeto.
+ * @returns {object} - O objeto com os dados do encaminhamento.
+ */
+function getFormData() {
+    return {
+        dataEncaminhamento: document.getElementById('dataEncaminhamento').value,
+        professor: document.getElementById('professor').value,
+        estudante: document.getElementById('estudante').value,
+        turma: document.getElementById('turma').value,
+        motivos: getCheckboxValues('motivo'),
+        detalhesMotivo: document.getElementById('detalhesMotivo').value,
+        acoesTomadas: getCheckboxValues('acao'),
+        detalhesAcao: document.getElementById('detalhesAcao').value,
+        numeroTelefone: document.getElementById('numeroTelefone').value,
+        horarioLigacao: document.getElementById('horarioLigacao').value,
+        statusLigacao: document.getElementById('statusLigacao').value,
+        recadoCom: document.getElementById('recadoCom').value,
+        providencias: getCheckboxValues('providencia'),
+        solicitacaoComparecimento: document.getElementById('solicitacaoComparecimento').value,
+        status: document.getElementById('status').value,
+        outrasInformacoes: document.getElementById('outrasInformacoes').value,
+        registradoPor: document.getElementById('registradoPor').value
+    };
 }
 
-
-// ===================================================================
-// FUNÇÕES AUXILIARES E DE RELATÓRIO (GARANTEM QUE O RELATÓRIO É COMPLETO)
-// ===================================================================
-function generateReport(reportType) {
-    if (allResults.length === 0) { // Usa a lista completa de resultados
-        alert("Não há resultados para gerar um relatório.");
-        return;
-    }
-    try {
-        localStorage.setItem('searchResults', JSON.stringify(allResults)); // Envia a lista completa
-        localStorage.setItem('reportType', reportType);
-        
-        const reportWindow = window.open('report.html', '_blank');
-        if (!reportWindow) {
-            alert('Seu navegador bloqueou a abertura da nova janela. Por favor, desative o bloqueador de pop-ups.');
-        }
-    } catch (e) {
-        alert("Ocorreu um erro ao tentar gerar o relatório: " + e.message);
-    }
+/**
+ * Preenche o formulário com dados existentes para edição.
+ * @param {object} data - Os dados do registro.
+ */
+function populateForm(data) {
+    document.getElementById('dataEncaminhamento').value = data.dataEncaminhamento || '';
+    document.getElementById('professor').value = data.professor || '';
+    document.getElementById('estudante').value = data.estudante || '';
+    document.getElementById('turma').value = data.turma || '';
+    setCheckboxValues('motivo', data.motivos);
+    document.getElementById('detalhesMotivo').value = data.detalhesMotivo || '';
+    setCheckboxValues('acao', data.acoesTomadas);
+    document.getElementById('detalhesAcao').value = data.detalhesAcao || '';
+    document.getElementById('numeroTelefone').value = data.numeroTelefone || '';
+    document.getElementById('horarioLigacao').value = data.horarioLigacao || '';
+    document.getElementById('statusLigacao').value = data.statusLigacao || '';
+    document.getElementById('recadoCom').value = data.recadoCom || '';
+    setCheckboxValues('providencia', data.providencias);
+    document.getElementById('solicitacaoComparecimento').value = data.solicitacaoComparecimento || '';
+    document.getElementById('status').value = data.status || '';
+    document.getElementById('outrasInformacoes').value = data.outrasInformacoes || '';
+    document.getElementById('registradoPor').value = data.registradoPor || '';
 }
 
-function redirectToEdit(recordId) {
-    window.location.href = `index.html?editId=${recordId}`;
+/**
+ * Reseta o formulário para o estado inicial.
+ */
+function resetForm() {
+    encaminhamentoForm.reset();
+    formTitle.textContent = 'Registrar Encaminhamento';
+    switchToEditMode(false);
+    // Limpa a URL para remover o ID de edição
+    window.history.pushState({}, document.title, window.location.pathname);
 }
 
-function displayNoResults() {
-    loadingMessage.style.display = 'none';
-    resultsTable.innerHTML = "<p>Nenhum registro encontrado com estes critérios.</p>";
-    resultsSummary.textContent = "Nenhum resultado para a busca atual.";
+/**
+ * Alterna a visibilidade dos botões de registrar e editar.
+ * @param {boolean} isEditing - True se estiver em modo de edição.
+ */
+function switchToEditMode(isEditing) {
+    registrarButton.style.display = isEditing ? 'none' : 'block';
+    editButtonsContainer.style.display = isEditing ? 'grid' : 'none';
 }
 
+/**
+ * Mostra uma mensagem de status (sucesso ou erro) abaixo do formulário.
+ * @param {string} message - A mensagem a ser exibida.
+ * @param {boolean} isSuccess - True para mensagem de sucesso, false para erro.
+ */
+function showStatusMessage(message, isSuccess) {
+    statusMessage.textContent = message;
+    statusMessage.className = isSuccess ? 'success' : 'error';
+    statusMessage.style.display = 'block';
+    setTimeout(() => { statusMessage.style.display = 'none'; }, 4000);
+}
+
+/**
+ * Lida com erros do Firebase, mostrando uma mensagem clara.
+ * @param {Error} error - O objeto de erro do Firebase.
+ */
 function handleFirebaseError(error) {
-    loadingMessage.style.display = 'none';
-    resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">ERRO AO ACESSAR O BANCO DE DADOS:<br>${error.message}</p>`;
+    console.error("Erro no Firebase: ", error);
+    showStatusMessage(`❌ Erro de comunicação com o banco de dados: ${error.message}`, false);
 }
 
+/**
+ * Configura o estado de carregamento dos botões.
+ * @param {boolean} isLoading - True se estiver carregando.
+ * @param {string} text - O texto a ser exibido no botão.
+ * @param {boolean} isEditing - True se for o botão de edição.
+ */
+function setLoadingState(isLoading, text, isEditing = false) {
+    const button = isEditing ? salvarEdicaoButton : registrarButton;
+    button.disabled = isLoading;
+    button.textContent = text;
+}
+
+/**
+ * Funções auxiliares para checkboxes.
+ */
+function getCheckboxValues(name) {
+    const selected = [];
+    document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => {
+        selected.push(checkbox.value);
+    });
+    return selected.join(', ');
+}
+
+function setCheckboxValues(name, valuesString) {
+    if (!valuesString) return;
+    const values = valuesString.split(', ');
+    document.querySelectorAll(`input[name="${name}"]`).forEach(checkbox => {
+        checkbox.checked = values.includes(checkbox.value);
+    });
+}

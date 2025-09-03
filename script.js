@@ -1,5 +1,5 @@
 // ===================================================================
-// PASSO 1: CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
+// CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
 // ===================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
@@ -16,9 +16,10 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // ===================================================================
-// REFERÊNCIAS AOS ELEMENTOS DO FORMULÁRIO
+// REFERÊNCIAS AOS ELEMENTOS DA PÁGINA
 // ===================================================================
 const encaminhamentoForm = document.getElementById('encaminhamentoForm');
+const searchForm = document.getElementById('searchForm');
 const formTitle = document.getElementById('form-title');
 const registrarButton = document.getElementById('btnRegistrar');
 const editButtonsContainer = document.getElementById('editButtons');
@@ -30,36 +31,51 @@ const statusMessage = document.getElementById('status-message');
 // INICIALIZAÇÃO DA PÁGINA
 // ===================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Adiciona os listeners (ouvintes de eventos) aos botões
+    // Adiciona os listeners (ouvintes) para os formulários e botões
     encaminhamentoForm.addEventListener('submit', saveRecord);
+    searchForm.addEventListener('submit', redirectToSearchResults);
     salvarEdicaoButton.addEventListener('click', updateRecord);
     cancelarEdicaoButton.addEventListener('click', resetForm);
 
-    // Carrega a lista de criadores e verifica se está em modo de edição
     loadCreators();
-    checkEditMode();
+    checkEditMode(); // Verifica se a página foi aberta para editar um registro
 });
 
 // ===================================================================
-// FUNÇÕES PRINCIPAIS (SALVAR, ATUALIZAR, CARREGAR)
+// FUNÇÃO DE BUSCA
 // ===================================================================
+function redirectToSearchResults(e) {
+    e.preventDefault(); // Impede o envio padrão do formulário
+    const params = new URLSearchParams();
+    
+    // Pega os valores dos campos de busca
+    const estudante = document.getElementById('search-estudante').value;
+    const professor = document.getElementById('search-professor').value;
+    const data = document.getElementById('search-data').value;
+    const registradoPor = document.getElementById('search-registrado').value;
 
-/**
- * Salva um novo encaminhamento no Firebase.
- * @param {Event} e - O evento de submit do formulário.
- */
+    // Adiciona os valores aos parâmetros da URL, apenas se não estiverem vazios
+    if (estudante) params.append('estudante', estudante);
+    if (professor) params.append('professor', professor);
+    if (data) params.append('data', data);
+    if (registradoPor) params.append('registradoPor', registradoPor);
+
+    // Redireciona para a página de resultados com os filtros na URL
+    window.location.href = `results.html?${params.toString()}`;
+}
+
+
+// ===================================================================
+// FUNÇÕES DE CADASTRO E EDIÇÃO (sem alterações)
+// ===================================================================
 function saveRecord(e) {
-    e.preventDefault(); // Impede o recarregamento da página
-
+    e.preventDefault();
     const newRecord = getFormData();
     if (!newRecord.registradoPor) {
         alert("Por favor, selecione seu nome em 'Registrado por'.");
         return;
     }
-
-    // Cria uma nova chave única no Firebase
     const newRecordRef = database.ref('encaminhamentos').push();
-    
     setLoadingState(true, 'Salvando...');
     newRecordRef.set(newRecord)
         .then(() => {
@@ -70,38 +86,27 @@ function saveRecord(e) {
         .finally(() => setLoadingState(false, 'Registrar Encaminhamento'));
 }
 
-/**
- * Atualiza um encaminhamento existente no Firebase.
- */
 function updateRecord() {
-    const params = new URLSearchParams(window.location.search);
-    const recordId = params.get('editId');
+    const recordId = document.getElementById('editId').value;
     if (!recordId) return;
-
     const updatedRecord = getFormData();
-    
     setLoadingState(true, 'Atualizando...', true);
     database.ref(`encaminhamentos/${recordId}`).update(updatedRecord)
         .then(() => {
             showStatusMessage('✅ Encaminhamento atualizado com sucesso!', true);
-            // Redireciona para a página de busca para ver o resultado atualizado
             setTimeout(() => { window.location.href = 'results.html'; }, 1500);
         })
         .catch(handleFirebaseError)
         .finally(() => setLoadingState(false, 'Salvar Alterações', true));
 }
 
-/**
- * Verifica se a página foi carregada com um ID para edição.
- */
 function checkEditMode() {
     const params = new URLSearchParams(window.location.search);
     const recordId = params.get('editId');
-
     if (recordId) {
         formTitle.textContent = "Editando Encaminhamento";
-        showStatusMessage('Carregando dados para edição...', false);
-
+        showStatusMessage('Carregando dados...', false);
+        document.getElementById('editId').value = recordId;
         database.ref(`encaminhamentos/${recordId}`).once('value')
             .then(snapshot => {
                 const data = snapshot.val();
@@ -117,9 +122,6 @@ function checkEditMode() {
     }
 }
 
-/**
- * Carrega a lista de criadores.
- */
 function loadCreators() {
     const creators = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida"];
     const select = document.getElementById('registradoPor');
@@ -133,9 +135,8 @@ function loadCreators() {
 }
 
 // ===================================================================
-// FUNÇÕES AUXILIARES (MANIPULAÇÃO DE FORMULÁRIO E ESTADO)
+// FUNÇÕES AUXILIARES (sem alterações)
 // ===================================================================
-
 function getFormData() {
     return {
         dataEncaminhamento: document.getElementById('dataEncaminhamento').value,
@@ -182,6 +183,7 @@ function resetForm() {
     encaminhamentoForm.reset();
     formTitle.textContent = 'Registrar Encaminhamento';
     switchToEditMode(false);
+    // Limpa o parâmetro 'editId' da URL sem recarregar a página
     window.history.pushState({}, document.title, window.location.pathname);
 }
 
@@ -223,4 +225,3 @@ function setCheckboxValues(name, valuesString) {
         checkbox.checked = values.includes(checkbox.value);
     });
 }
-

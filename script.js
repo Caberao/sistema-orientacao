@@ -1,5 +1,5 @@
 // ===================================================================
-// CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
+// CONFIGURAÇÃO DO FIREBASE
 // ===================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
@@ -28,7 +28,7 @@ const providenciasOptions = ["Solicitar comparecimento do responsável", "Advert
 document.addEventListener('DOMContentLoaded', () => {
     // Referências aos elementos da página
     const encaminhamentoForm = document.getElementById('encaminhamentoForm');
-    const searchButton = document.getElementById('search-button');
+    const searchButton = document.getElementById('search-button'); // CORRIGIDO: Busca o BOTÃO correto
     const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
     const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Adiciona os listeners (ouvintes)
     encaminhamentoForm.addEventListener('submit', saveRecord);
-    searchButton.addEventListener('click', redirectToSearchResults);
+    searchButton.addEventListener('click', redirectToSearchResults); // CORRIGIDO: Usa 'click' no botão
     salvarEdicaoButton.addEventListener('click', updateRecord);
     cancelarEdicaoButton.addEventListener('click', resetForm);
     
@@ -371,3 +371,4 @@ function setCheckboxValues(name, valuesString) {
         }
     });
 }
+

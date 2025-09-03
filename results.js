@@ -27,7 +27,7 @@ const paginationContainer = document.getElementById("pagination-container");
 
 let allResults = [];      // Armazena TODOS os resultados da busca
 let currentPage = 1;      // Página atual
-const recordsPerPage = 10; // Quantidade de registros por página
+const recordsPerPage = 30; // Quantidade de registros por página
 
 // ===================================================================
 // INICIALIZAÇÃO DA PÁGINA
@@ -174,3 +174,4 @@ function handleFirebaseError(error) {
     loadingMessage.style.display = 'none';
     resultsTable.innerHTML = `<p style="color: red; font-weight: bold;">ERRO AO ACESSAR O BANCO DE DADOS:<br>${error.message}</p>`;
 }
+

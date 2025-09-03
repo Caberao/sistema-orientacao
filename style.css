@@ -1,4 +1,4 @@
-/* Estilos gerais */
+/* Estilos Gerais */
 body {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     background-color: #f8f9fa;
@@ -6,6 +6,7 @@ body {
     margin: 0;
     padding: 20px;
 }
+
 .container, .container-consulta {
     max-width: 800px;
     margin: 25px auto;
@@ -14,12 +15,14 @@ body {
     border-radius: 12px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.07);
 }
+
 h1 {
     color: #8667a8;
     text-align: center;
     margin-bottom: 30px;
     font-weight: 500;
 }
+
 h2 {
     color: #8667a8;
     border-bottom: 2px solid #f0eaf5;
@@ -27,16 +30,25 @@ h2 {
     margin-top: 30px;
     font-weight: 500;
 }
+
+/* Formulários */
 .form-group {
     margin-bottom: 22px;
 }
+
 label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
     color: #5f6368;
 }
-input[type="text"], input[type="date"], input[type="tel"], input[type="time"], select, textarea {
+
+input[type="text"],
+input[type="date"],
+input[type="tel"],
+input[type="time"],
+select,
+textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ddd;
@@ -45,15 +57,24 @@ input[type="text"], input[type="date"], input[type="tel"], input[type="time"], s
     font-size: 16px;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
-input[type="text"]:focus, input[type="date"]:focus, input[type="tel"]:focus, input[type="time"]:focus, select:focus, textarea:focus {
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="tel"]:focus,
+input[type="time"]:focus,
+select:focus,
+textarea:focus {
     outline: none;
     border-color: #8667a8;
     box-shadow: 0 0 0 3px rgba(134, 103, 168, 0.2);
 }
+
 textarea {
     resize: vertical;
     min-height: 90px;
 }
+
+/* Botões */
 button {
     width: 100%;
     padding: 15px;
@@ -66,23 +87,23 @@ button {
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
-#status-message {
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
-    padding: 12px;
-    border-radius: 8px;
-    display: none;
-    transition: opacity 0.3s;
-}
-.success { background-color: #e6f4ea; color: #1e8e3e; }
-.error { background-color: #fce8e6; color: #d93025; }
 
-/* Checkboxes e Grids */
+.edit-buttons-container {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#btnSalvarEdicao { background: linear-gradient(45deg, #5cb85c, #4cae4c); }
+#btnCancelarEdicao { background: linear-gradient(45deg, #f0ad4e, #ec971f); }
+
+/* Checkboxes */
 .checkbox-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -94,128 +115,77 @@ button:hover {
 }
 .checkbox-container div { display: flex; align-items: center; }
 input[type="checkbox"] { width: auto; margin-right: 8px; }
-.grid-2-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
 
-/* Botões */
-.edit-buttons-container {
-    display: none;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 20px;
-}
-#search-button { background: linear-gradient(45deg, #5cb85c, #4cae4c); }
-#btnSalvarEdicao { background: linear-gradient(45deg, #5cb85c, #4cae4c); }
-#btnCancelarEdicao { background: linear-gradient(45deg, #f0ad4e, #ec971f); }
+/* Layout e Mensagens */
+.grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-/* Tabela de Resultados */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-}
-th, td {
-    text-align: left;
-    padding: 14px;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 15px;
-}
-th {
-    background-color: #f1f3f4;
-    font-weight: 600;
-    color: #3c4043;
-}
-tr:hover { background-color: #f8f9fa; }
-.edit-btn {
-    padding: 5px 10px;
-    font-size: 12px;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    font-weight: 500;
-    width: auto;
-}
-.edit-btn:hover { background-color: #0056b3; transform: translateY(-1px); }
-
-/* Relatórios */
-#results-summary {
+#status-message {
     text-align: center;
-    font-style: italic;
-    color: #6c757d;
-    margin-bottom: 20px;
+    margin-top: 20px;
+    font-weight: bold;
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
 }
-.report-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-.report-btn {
-    width: auto;
-    font-size: 14px;
-    padding: 10px 20px;
-}
+.success { background-color: #e6f4ea; color: #1e8e3e; }
+.error { background-color: #fce8e6; color: #d93025; }
 
-/* ESTILO PARA O BOTÃO "NOVA BUSCA / VOLTAR" */
+/* Página de Resultados */
+#search-button { background: linear-gradient(45deg, #5cb85c, #4cae4c); }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { text-align: left; padding: 14px; border-bottom: 1px solid #e0e0e0; font-size: 15px; }
+th { background-color: #f1f3f4; font-weight: 600; color: #3c4043;}
+tr:hover { background-color: #f8f9fa; }
+.edit-btn { padding: 5px 10px; font-size: 12px; background-color: #ffc107; color: #212529; border-radius: 5px; font-weight: 500; width: auto; margin-right: 5px; }
+.edit-btn:hover { background-color: #e0a800; transform: translateY(-1px); }
+.report-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.results-summary { text-align: center; margin-top: 20px; color: #5f6368; font-style: italic; }
 .back-button {
-    display: block;
-    width: -moz-fit-content;
-    width: fit-content;
-    margin: -15px auto 20px auto;
+    display: inline-block;
+    margin-bottom: 20px;
     padding: 10px 20px;
     background-color: #6c757d;
     color: white;
     text-decoration: none;
     border-radius: 8px;
-    font-size: 14px;
     font-weight: 600;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s;
 }
-.back-button:hover {
-    background-color: #5a6268;
-}
+.back-button:hover { background-color: #5a6268; }
 
 /* Paginação */
 .pagination-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    text-align: center;
     margin-top: 30px;
-    padding: 10px;
 }
 .pagination-btn {
+    display: inline-block;
+    width: auto;
     padding: 8px 14px;
+    margin: 0 4px;
     font-size: 14px;
-    border: 1px solid #ddd;
-    background-color: #fff;
-    color: #8667a8;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.2s, color 0.2s;
     font-weight: 600;
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
 }
-.pagination-btn:hover:not(.disabled) {
-    background-color: #f0eaf5;
+.pagination-btn:hover {
+    background-color: #ced4da;
 }
 .pagination-btn.active {
     background-color: #8667a8;
-    color: #fff;
+    color: white;
     border-color: #8667a8;
-    cursor: default;
 }
-.pagination-btn.disabled {
-    color: #ccc;
-    cursor: not-allowed;
+.pagination-btn:disabled {
     background-color: #f8f9fa;
+    color: #adb5bd;
+    cursor: not-allowed;
 }
 .pagination-btn.ellipsis {
     border: none;
     background: none;
     cursor: default;
 }
-

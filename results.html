@@ -2,34 +2,37 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
-    <title>Resultados da Busca - Sistema de Encaminhamentos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Busca - Sistema de Orientação</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container-consulta">
         <h1>Resultados da Busca</h1>
-
-        <!-- BOTÃO "NOVA BUSCA / VOLTAR" ADICIONADO -->
+        
+        <!-- Botão para voltar à página principal -->
         <a href="index.html" class="back-button">Nova Busca / Voltar</a>
 
-        <p id="results-summary">Carregando...</p>
-        <div class="report-buttons">
-            <button id="simple-report-button" class="report-btn">Gerar Relatório Simples</button>
-            <button id="complete-report-button" class="report-btn">Gerar Relatório Completo</button>
-        </div>
+        <div id="results-summary" class="results-summary"></div>
         <div id="results-area">
-            <p id="loading-message" style="text-align:center; display:block;">Carregando...</p>
+            <p id="loading-message" style="text-align:center;">Carregando...</p>
             <div id="results-table"></div>
         </div>
 
-        <!-- CONTAINER PARA OS BOTÕES DE PAGINAÇÃO (SEM ALTERAÇÃO) -->
+        <!-- Container para os botões de paginação -->
         <div id="pagination-container" class="pagination-container"></div>
 
+        <div class="report-buttons">
+            <button id="simple-report-button">Gerar Relatório Simples</button>
+            <button id="complete-report-button">Gerar Relatório Completo</button>
+        </div>
     </div>
+
+    <!-- Firebase App (o núcleo) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Realtime Database -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Nosso script para esta página -->
     <script src="results.js"></script>
 </body>
 </html>
-

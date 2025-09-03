@@ -16,36 +16,100 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // ===================================================================
-// INICIALIZAÇÃO DA PÁGINA (A CORREÇÃO ESTÁ AQUI)
+// DADOS PARA CHECKBOXES DINÂMICOS
 // ===================================================================
-// Este código garante que tudo só será executado depois que a página HTML estiver 100% carregada.
+const motivosOptions = [
+    "Indisciplina", "Gazeando aula", "Faltoso", "Celular/Fone de ouvido",
+    "Dificuldade de aprendizado", "Chegada tardia", "Não produz/participa", "Problema com notas"
+];
+const acoesOptions = ["Diálogo com o Estudante", "Comunicado aos Responsáveis"];
+const providenciasOptions = ["Solicitar comparecimento do responsável", "Advertência"];
+
+// ===================================================================
+// INICIALIZAÇÃO DA PÁGINA
+// ===================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // Referências aos elementos da página
     const encaminhamentoForm = document.getElementById('encaminhamentoForm');
-    const searchForm = document.getElementById('searchForm');
-    const formTitle = document.getElementById('form-title');
-    const registrarButton = document.getElementById('btnRegistrar');
-    const editButtonsContainer = document.getElementById('editButtons');
+    const searchButton = document.getElementById('search-button'); // CORRIGIDO: Agora busca o botão
     const salvarEdicaoButton = document.getElementById('btnSalvarEdicao');
     const cancelarEdicaoButton = document.getElementById('btnCancelarEdicao');
 
+    // Gera os checkboxes dinamicamente
+    createCheckboxes('motivos-container', motivosOptions, 'motivo');
+    createCheckboxes('acoes-container', acoesOptions, 'acao');
+    createCheckboxes('providencias-container', providenciasOptions, 'providencia');
+
     // Adiciona os listeners (ouvintes) para os formulários e botões
     encaminhamentoForm.addEventListener('submit', saveRecord);
-    searchForm.addEventListener('submit', redirectToSearchResults);
+    searchButton.addEventListener('click', redirectToSearchResults); // CORRIGIDO: Agora usa o evento de 'click'
     salvarEdicaoButton.addEventListener('click', updateRecord);
     cancelarEdicaoButton.addEventListener('click', resetForm);
 
     loadCreators();
-    checkEditMode(); // Verifica se a página foi aberta para editar um registro
+    checkEditMode();
 });
 
+// ===================================================================
+// FUNÇÕES DO SISTEMA
+// ===================================================================
 
-// ===================================================================
-// FUNÇÕES DO SISTEMA (O RESTO DO CÓDIGO PERMANECE O MESMO)
-// ===================================================================
+function createCheckboxes(containerId, options, groupName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    options.forEach(option => {
+        const div = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = groupName;
+        checkbox.value = option;
+        const label = document.createElement('label');
+        label.textContent = ` ${option}`;
+        label.style.fontWeight = 'normal';
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        container.appendChild(div);
+    });
+
+    if (groupName === 'acao' || groupName === 'providencia') {
+        const divOutros = document.createElement('div');
+        const checkboxOutros = document.createElement('input');
+        checkboxOutros.type = 'checkbox';
+        checkboxOutros.name = groupName;
+        checkboxOutros.value = 'Outros';
+        checkboxOutros.id = `${groupName}-outros-check`;
+
+        const labelOutros = document.createElement('label');
+        labelOutros.htmlFor = checkboxOutros.id;
+        labelOutros.textContent = ' Outros:';
+        labelOutros.style.fontWeight = 'normal';
+
+        const textOutros = document.createElement('input');
+        textOutros.type = 'text';
+        textOutros.id = `${groupName}-outros-text`;
+        textOutros.placeholder = 'Especifique...';
+        textOutros.style.display = 'inline';
+        textOutros.style.width = '65%';
+        textOutros.disabled = true;
+
+        checkboxOutros.addEventListener('change', function() {
+            textOutros.disabled = !this.checked;
+            if (this.checked) {
+                textOutros.focus();
+            } else {
+                textOutros.value = '';
+            }
+        });
+        divOutros.appendChild(checkboxOutros);
+        divOutros.appendChild(labelOutros);
+        divOutros.appendChild(textOutros);
+        container.appendChild(divOutros);
+    }
+}
 
 function redirectToSearchResults(e) {
-    e.preventDefault();
+    // e.preventDefault() não é estritamente necessário para um botão, mas não causa mal.
     const params = new URLSearchParams();
     const estudante = document.getElementById('search-estudante').value;
     const professor = document.getElementById('search-professor').value;
@@ -202,13 +266,35 @@ function setLoadingState(isLoading, text, isEditing = false) {
 
 function getCheckboxValues(name) {
     const selected = [];
-    document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => { selected.push(checkbox.value); });
+    document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => {
+        if (checkbox.value === "Outros") {
+            const outrosTexto = document.getElementById(`${name}-outros-text`);
+            if (outrosTexto && outrosTexto.value) {
+                selected.push("Outros: " + outrosTexto.value);
+            }
+        } else {
+            selected.push(checkbox.value);
+        }
+    });
     return selected.join(', ');
 }
 
 function setCheckboxValues(name, valuesString) {
     if (!valuesString) return;
     const values = valuesString.split(', ');
-    document.querySelectorAll(`input[name="${name}"]`).forEach(checkbox => { checkbox.checked = values.includes(checkbox.value); });
+    document.querySelectorAll(`input[name="${name}"]`).forEach(checkbox => {
+        checkbox.checked = values.includes(checkbox.value);
+        if (checkbox.value === "Outros") {
+            const outrosValue = values.find(v => v.startsWith("Outros: "));
+            if (outrosValue) {
+                checkbox.checked = true;
+                const textInput = document.getElementById(`${name}-outros-text`);
+                if (textInput) {
+                    textInput.value = outrosValue.replace("Outros: ", "");
+                    textInput.disabled = false;
+                }
+            }
+        }
+    });
 }
 

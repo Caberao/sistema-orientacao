@@ -1,14 +1,14 @@
 // ===================================================================
-// PASSO 1: COLE A CONFIGURAÇÃO DO FIREBASE AQUI
+// PASSO 1: CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
 // ===================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
-  authDomain: "sistema-de-orientacao.firebaseapp.com",
-  databaseURL: "https://sistema-de-orientacao-default-rtdb.firebaseio.com",
-  projectId: "sistema-de-orientacao",
-  storageBucket: "sistema-de-orientacao.firebasestorage.app",
-  messagingSenderId: "931283448046",
-  appId: "1:931283448046:web:b9e81772112943533443ff"
+    apiKey: "AIzaSyD4zcaOhAoSOa7qgLRCS1UJlAjUZdQaiBM",
+    authDomain: "sistema-de-orientacao.firebaseapp.com",
+    databaseURL: "https://sistema-de-orientacao-default-rtdb.firebaseio.com",
+    projectId: "sistema-de-orientacao",
+    storageBucket: "sistema-de-orientacao.appspot.com",
+    messagingSenderId: "931283448046",
+    appId: "1:931283448046:web:b9e81772112943533443ff"
 };
 
 // Inicializa o Firebase
@@ -136,10 +136,6 @@ function loadCreators() {
 // FUNÇÕES AUXILIARES (MANIPULAÇÃO DE FORMULÁRIO E ESTADO)
 // ===================================================================
 
-/**
- * Coleta todos os dados do formulário e retorna um objeto.
- * @returns {object} - O objeto com os dados do encaminhamento.
- */
 function getFormData() {
     return {
         dataEncaminhamento: document.getElementById('dataEncaminhamento').value,
@@ -162,10 +158,6 @@ function getFormData() {
     };
 }
 
-/**
- * Preenche o formulário com dados existentes para edição.
- * @param {object} data - Os dados do registro.
- */
 function populateForm(data) {
     document.getElementById('dataEncaminhamento').value = data.dataEncaminhamento || '';
     document.getElementById('professor').value = data.professor || '';
@@ -186,31 +178,18 @@ function populateForm(data) {
     document.getElementById('registradoPor').value = data.registradoPor || '';
 }
 
-/**
- * Reseta o formulário para o estado inicial.
- */
 function resetForm() {
     encaminhamentoForm.reset();
     formTitle.textContent = 'Registrar Encaminhamento';
     switchToEditMode(false);
-    // Limpa a URL para remover o ID de edição
     window.history.pushState({}, document.title, window.location.pathname);
 }
 
-/**
- * Alterna a visibilidade dos botões de registrar e editar.
- * @param {boolean} isEditing - True se estiver em modo de edição.
- */
 function switchToEditMode(isEditing) {
     registrarButton.style.display = isEditing ? 'none' : 'block';
     editButtonsContainer.style.display = isEditing ? 'grid' : 'none';
 }
 
-/**
- * Mostra uma mensagem de status (sucesso ou erro) abaixo do formulário.
- * @param {string} message - A mensagem a ser exibida.
- * @param {boolean} isSuccess - True para mensagem de sucesso, false para erro.
- */
 function showStatusMessage(message, isSuccess) {
     statusMessage.textContent = message;
     statusMessage.className = isSuccess ? 'success' : 'error';
@@ -218,30 +197,17 @@ function showStatusMessage(message, isSuccess) {
     setTimeout(() => { statusMessage.style.display = 'none'; }, 4000);
 }
 
-/**
- * Lida com erros do Firebase, mostrando uma mensagem clara.
- * @param {Error} error - O objeto de erro do Firebase.
- */
 function handleFirebaseError(error) {
     console.error("Erro no Firebase: ", error);
     showStatusMessage(`❌ Erro de comunicação com o banco de dados: ${error.message}`, false);
 }
 
-/**
- * Configura o estado de carregamento dos botões.
- * @param {boolean} isLoading - True se estiver carregando.
- * @param {string} text - O texto a ser exibido no botão.
- * @param {boolean} isEditing - True se for o botão de edição.
- */
 function setLoadingState(isLoading, text, isEditing = false) {
     const button = isEditing ? salvarEdicaoButton : registrarButton;
     button.disabled = isLoading;
     button.textContent = text;
 }
 
-/**
- * Funções auxiliares para checkboxes.
- */
 function getCheckboxValues(name) {
     const selected = [];
     document.querySelectorAll(`input[name="${name}"]:checked`).forEach(checkbox => {
@@ -257,3 +223,4 @@ function setCheckboxValues(name, valuesString) {
         checkbox.checked = values.includes(checkbox.value);
     });
 }
+

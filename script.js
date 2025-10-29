@@ -250,7 +250,7 @@ function checkEditMode() {
 }
 
 function loadCreators() {
-    const creators = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida"];
+    const creators = ["Jênifer Berão", "Joyce Vitorino", "Flávia Almeida", "Jaqueline Cardoso"];
     const select = document.getElementById('registradoPor');
     select.innerHTML = '<option value="">Selecione seu nome</option>';
     creators.forEach(name => {
@@ -371,4 +371,5 @@ function setCheckboxValues(name, valuesString) {
         }
     });
 }
+
 
